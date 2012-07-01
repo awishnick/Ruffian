@@ -1,2 +1,2 @@
 set(CMAKE_C_FLAGS_INIT "-std=c99")
-set(CMAKE_CXX_FLAGS_INIT "-std=c++0x -stdlib=libc++ -U__STRICT_ANSI__ -D_STDC_FORMAT_MACROS")
+set(CMAKE_CXX_FLAGS_INIT "-std=c++0x -stdlib=libc++ -U__STRICT_ANSI__ -D__STDC_FORMAT_MACROS")

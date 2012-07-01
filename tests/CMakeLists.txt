@@ -5,7 +5,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
 add_executable(${PROJECT_TEST_NAME}
   main.cpp
-  Lex/tests.cpp
+  Lex/Keywords.cpp
 )
 target_link_libraries(${PROJECT_TEST_NAME}
   ${PROJECT_NAME_STR}

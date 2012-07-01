@@ -1,18 +1,23 @@
 #pragma once
-#include <iosfwd>
 
 #include "Lex/Token.h"
+#include <memory>
+#include <string>
+#include <sstream>
+#include <vector>
 
 class Lexer {
 public:
-  Lexer(std::istream& input);
+  Lexer(const std::string& inputbuf);
   ~Lexer();
 
   Token GetCurToken() const;
   Token ConsumeCurToken();
 
 private:
-  std::istream& input_;
-  Token cur_tok_;
+  std::stringstream input_;
+  Token curtok_;
+
+  std::vector<std::unique_ptr<std::string>> string_pool_;
 };
 
