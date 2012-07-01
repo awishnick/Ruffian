@@ -47,13 +47,31 @@ static int LexAndDump(const string& filename, ostream& stream) {
         stream << ")";
         break;
       case Token::lbrace:
-        stream << "[";
+        stream << "{";
         break;
       case Token::rbrace:
+        stream << "}";
+        break;
+      case Token::lbracket:
+        stream << "[";
+        break;
+      case Token::rbracket:
         stream << "]";
+        break;
+      case Token::semicolon:
+        stream << ";";
+        break;
+      case Token::assign:
+        stream << "=";
         break;
       case Token::minus:
         stream << "-";
+        break;
+      case Token::plus:
+        stream << "+";
+        break;
+      case Token::arrow:
+        stream << "->";
         break;
       case Token::unknown:
         stream << "UNKNOWN";

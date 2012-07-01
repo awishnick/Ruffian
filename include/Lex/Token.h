@@ -17,8 +17,15 @@ public:
     rparen,
     lbrace,
     rbrace,
+    lbracket,
+    rbracket,
+    semicolon,
+
+    assign,
 
     minus,
+    plus,
+    arrow,
 
     eof,
     unknown

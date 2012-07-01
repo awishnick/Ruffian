@@ -85,6 +85,26 @@ static Token GetNextToken(stringstream& input,
     return GetNumericLiteral(input);
   }
 
+  switch (input.get()) {
+    case '(': return Token::Create(Token::lparen);
+    case ')': return Token::Create(Token::rparen);
+    case '{': return Token::Create(Token::lbrace);
+    case '}': return Token::Create(Token::rbrace);
+    case '[': return Token::Create(Token::lbracket);
+    case ']': return Token::Create(Token::rbracket);
+    case ';': return Token::Create(Token::semicolon);
+    case '=': return Token::Create(Token::assign);
+    case '+': return Token::Create(Token::plus);
+    case '-':
+      if (input.peek() == '>') {
+        (void)input.get();
+        return Token::Create(Token::arrow);
+      } else {
+        return Token::Create(Token::minus);
+      }
+    default: break;
+  }
+
   if (input.peek() == '-') {
     (void)input.get();
     return Token::Create(Token::minus);
