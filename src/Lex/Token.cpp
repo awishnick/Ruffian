@@ -18,11 +18,21 @@ void Token::SetKind(Kind kind) {
 
 llvm::StringRef Token::GetIdentifier() const {
   assert(GetKind() == ident);
-  return ident_;
+  return storage_.ident;
 }
 
 void Token::SetIdentifier(llvm::StringRef ident) {
   kind_ = Token::ident;
-  ident_ = ident;
+  storage_.ident = ident;
+}
+
+llvm::APInt Token::GetIntLiteral() const {
+  assert(GetKind() == int_literal);
+  return storage_.int_literal;
+}
+
+void Token::SetIntLiteral(llvm::APInt int_literal) {
+  kind_ = Token::int_literal;
+  storage_.int_literal = int_literal;
 }
 
