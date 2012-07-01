@@ -71,6 +71,9 @@ static Token GetNextToken(stringstream& input,
                           vector<unique_ptr<string>>& string_pool) {
   input >> ws;
 
+  // Check for EOF
+  if (input.eof()) return Token::Create(Token::eof);
+
   // Check for a keyword or identifier. They both start
   // with an alphabetic character.
   if (isalpha(input.peek())) {

@@ -20,6 +20,7 @@ public:
 
     minus,
 
+    eof,
     unknown
   };
 
