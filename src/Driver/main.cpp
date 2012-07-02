@@ -7,20 +7,11 @@
 namespace cl = llvm::cl;
 using namespace std;
 
-
-// Reads an entire file into a string.
-// This will throw ios_base::failure if there's an error.
-static string ReadFile(const string& filename) {
-  ifstream file;
-  file.exceptions(ios_base::badbit | ios_base::failbit);
-  file.open(filename);
-  return string(istreambuf_iterator<char>(file),
-                istreambuf_iterator<char>());
-}
-
 // Throws ios_base::failure if there's an error reading the file
-static int LexAndDump(const string& filename, ostream& stream) {
-  Lexer lex(ReadFile(filename));
+static int LexAndDump(istream& input, ostream& stream) {
+  input >> noskipws;
+  Lexer lex((string(istreambuf_iterator<char>(input),
+                    istreambuf_iterator<char>())));
 
   while (lex.GetCurToken().GetKind() != Token::eof) {
     auto tok = lex.ConsumeCurToken();
@@ -89,7 +80,7 @@ static int LexAndDump(const string& filename, ostream& stream) {
 }
 
 cl::opt<string> input_filename(cl::Positional, cl::desc("<input file>"),
-                               cl::Required);
+                               cl::init(""));
 cl::opt<bool> only_lex("only-lex",
                        cl::desc("Run the input file through the lexer and "
                                 "output the tokens"));
@@ -98,7 +89,16 @@ int main(int argc, char* argv[]) {
 
   if (only_lex) {
     try {
-      return LexAndDump(input_filename, cout);
+      istream* input;
+      ifstream file;
+      if (!input_filename.empty()) {
+        file.exceptions(ios_base::badbit | ios_base::failbit);
+        file.open(input_filename);
+        input = &file;
+      } else {
+        input = &cin;
+      }
+      return LexAndDump(*input, cout);
     } catch (const ios_base::failure& e) {
       cerr << "Error reading from \"" << input_filename << "\"" << endl;
       return 1;

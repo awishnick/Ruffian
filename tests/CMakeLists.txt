@@ -16,3 +16,9 @@ target_link_libraries(${PROJECT_TEST_NAME}
 
 add_test(${PROJECT_TEST_NAME} ${PROJECT_TEST_NAME})
 
+set(FILE_CHECK_PATH "${LLVM_ROOT}/bin/FileCheck")
+set(DRIVER_PATH "${CMAKE_BINARY_DIR}/src/driver")
+set(TESTS_PATH "${CMAKE_SOURCE_DIR}/tests")
+set(TESTER_PATH "${TESTS_PATH}/run_file_check.sh")
+add_test(lex_filecheck
+  ${TESTER_PATH} ${DRIVER_PATH} ${FILE_CHECK_PATH} ${TESTS_PATH}/Lex/test.rf)

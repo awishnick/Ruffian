@@ -67,9 +67,41 @@ static Token GetNumericLiteral(stringstream& input) {
   return tok;
 }
 
+// Skips comments, returning true if any were found
+static bool SkipComments(stringstream& input) {
+  // Skip single-line comments.
+  if (input.peek() == '/') {
+    (void)input.get();
+    if (input.peek() == '/') {
+      input.ignore(numeric_limits<streamsize>::max(), '\n');
+      SkipComments(input);
+      return true;
+    } else {
+      // Oops, this wasn't a comment! Rewind.
+      input.unget();
+    }
+  }
+
+  return false;
+}
+
+// Skips whitespace, returning true if any was found.
+static bool SkipWhitespace(stringstream& input) {
+  if (!isspace(input.peek())) return false;
+  input >> ws;
+  return true;
+}
+
+// Ignores input that will not be tokenized, like whitespace and comments.
+static void SkipToNextToken(stringstream& input) {
+  for (;;) {
+    if (!SkipWhitespace(input) && !SkipComments(input)) break;
+  }
+}
+
 static Token GetNextToken(stringstream& input,
                           vector<unique_ptr<string>>& string_pool) {
-  input >> ws;
+  SkipToNextToken(input);
 
   // Check for EOF
   if (input.eof()) return Token::Create(Token::eof);
