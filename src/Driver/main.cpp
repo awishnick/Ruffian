@@ -23,6 +23,9 @@ static int LexAndDump(istream& input, ostream& stream) {
       case Token::kw_var:
         stream << "var";
         break;
+      case Token::kw_return:
+        stream << "return";
+        break;
       case Token::ident:
         stream << "IDENT(" << tok.GetIdentifier().data() << ")";
         break;

@@ -8,6 +8,7 @@ public:
   enum Kind {
     kw_func,
     kw_var,
+    kw_return,
 
     ident,
 

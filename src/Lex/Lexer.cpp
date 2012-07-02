@@ -32,6 +32,7 @@ static Token GetIdentifierOrKeyword(stringstream& input,
   // Check for keywords.
   if (!ident_or_kw->compare("func")) return Token::Create(Token::kw_func);
   if (!ident_or_kw->compare("var")) return Token::Create(Token::kw_var);
+  if (!ident_or_kw->compare("return")) return Token::Create(Token::kw_return);
 
   // If we got here, it's not a keyword, so it must be an identifier
   Token tok;

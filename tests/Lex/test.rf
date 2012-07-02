@@ -1,11 +1,18 @@
 func addone(int a) -> int {
 // CHECK: func IDENT(addone) ( IDENT(int) IDENT(a) ) -> IDENT(int) {
   return a + 1;
+// CHECK: return IDENT(a) + INT_LITERAL(1) ;
 }
+// CHECK: }
 
 func main() {
+// CHECK: func IDENT(main) ( ) {
   var int a = 5;
+// CHECK: var IDENT(int) IDENT(a) = INT_LITERAL(5) ;
   var int b;
+// CHECK: var IDENT(int) IDENT(b) ;
 
   b = addone(a);
+// CHECK: IDENT(b) = IDENT(addone) ( IDENT(a) ) ;
 }
+// CHECK: }
