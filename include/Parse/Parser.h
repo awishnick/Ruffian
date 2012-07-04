@@ -8,7 +8,7 @@
 #include <vector>
 
 class Lexer; class Module; class Decl; class FunctionDecl; class VariableDecl;
-class Stmt;
+class Stmt; class BlockStmt;
 
 class Parser {
 public:
@@ -35,7 +35,7 @@ private:
   ////////////////////////////////////////
   // Decl
   ////////////////////////////////////////
-  std::unique_ptr<Decl> parseTopLevelDecl();
+  std::unique_ptr<Decl> parseDecl();
   std::unique_ptr<FunctionDecl> parseFunctionDecl();
   
   // Parses a function argument list, placing it into args.
@@ -54,5 +54,6 @@ private:
   // Stmt
   ////////////////////////////////////////
   std::unique_ptr<Stmt> parseStmt();
+  std::unique_ptr<BlockStmt> parseBlockStmt();
 };
 

@@ -1,5 +1,5 @@
-func addone(int a) -> int {
-// CHECK: func IDENT(addone) ( IDENT(int) IDENT(a) ) -> IDENT(int) {
+func addone(a int) -> int {
+// CHECK: func IDENT(addone) ( IDENT(a) IDENT(int) ) -> IDENT(int) {
   return a + 1;
 // CHECK: return IDENT(a) + INT_LITERAL(1) ;
 }
@@ -7,10 +7,10 @@ func addone(int a) -> int {
 
 func main() {
 // CHECK: func IDENT(main) ( ) {
-  var int a = 5;
-// CHECK: var IDENT(int) IDENT(a) = INT_LITERAL(5) ;
-  var int b;
-// CHECK: var IDENT(int) IDENT(b) ;
+  var a int = 5;
+// CHECK: var IDENT(a) IDENT(int) = INT_LITERAL(5) ;
+  var b int;
+// CHECK: var IDENT(b) IDENT(int) ;
 
   b = addone(a);
 // CHECK: IDENT(b) = IDENT(addone) ( IDENT(a) ) ;

@@ -1,13 +1,14 @@
 #pragma once
 
+#include "AST/Stmt.h"
 #include "Lex/Token.h"
 #include "Support/iterator_range.h"
 #include <memory>
 #include <vector>
 
-class Expr; class Stmt;
+class Expr;
 
-class Decl {
+class Decl : public Stmt {
 public:
   Decl();
   virtual ~Decl();
@@ -34,15 +35,16 @@ public:
   FunctionDecl(Token name,
                Token return_type,
                std::vector<std::unique_ptr<VariableDecl>> args,
-               std::unique_ptr<Stmt> body);
+               std::unique_ptr<BlockStmt> body);
   // Declares a function that does not return a value.
   FunctionDecl(Token name,
                std::vector<std::unique_ptr<VariableDecl>> args,
-               std::unique_ptr<Stmt> body);
+               std::unique_ptr<BlockStmt> body);
   virtual ~FunctionDecl();
 
   const Token& GetName() const { return name_; }
   const Token* GetReturnType() const { return return_type_.get(); }
+  BlockStmt* GetBody() const { return body_.get(); }
 
   typedef std::vector<std::unique_ptr<VariableDecl>> args_container_type;
   typedef args_container_type::iterator args_iterator;
@@ -59,7 +61,7 @@ private:
   Token name_;
   std::unique_ptr<Token> return_type_;
   std::vector<std::unique_ptr<VariableDecl>> args_;
-  std::unique_ptr<Stmt> body_;
+  std::unique_ptr<BlockStmt> body_;
 };
 
 

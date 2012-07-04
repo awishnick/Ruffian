@@ -1,7 +1,9 @@
 #include "AST/ASTPrinter.h"
 #include "AST/Decl.h"
 #include "AST/Module.h"
+#include "AST/Stmt.h"
 #include "llvm/Support/ErrorHandling.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -20,11 +22,45 @@ public:
 
     return true;
   }
-  bool VisitModule(Module* module) {
+  bool VisitModule(Module*) {
     return true;
   }
   bool WalkUpFromModule(Module* module) {
     return derived().VisitModule(module);
+  }
+
+  // Stmt
+  bool TraverseStmt(Stmt* stmt) {
+    if (!derived().WalkUpFromStmt(stmt)) return false;
+
+    if (auto child = dynamic_cast<BlockStmt*>(stmt)) {
+      return derived().TraveseVariableDecl(child);
+    } else {
+      llvm_unreachable("Unimplemented subclass");
+    }
+  }
+  bool VisitStmt(Stmt*) {
+    return true;
+  }
+  bool WalkUpFromStmt(Stmt* stmt) {
+    return derived().VisitStmt(stmt);
+  }
+
+  // BlockStmt
+  bool TraverseBlockStmt(BlockStmt* stmt) {
+    if (!derived().WalkUpFromBlockStmt(stmt)) return false;
+
+    for (auto& child : stmt->stmts_range()) {
+      derived().VisitStmt(child.get());
+    }
+
+    return true;
+  }
+  bool VisitBlockStmt(Stmt*) {
+    return true;
+  }
+  bool WalkUpFromBlockStmt(BlockStmt* stmt) {
+    return derived().VisitBlockStmt(stmt);
   }
 
   // Decl
@@ -39,10 +75,11 @@ public:
       llvm_unreachable("Unimplemented subclass");
     }
   }
-  bool VisitDecl(Decl* decl) {
+  bool VisitDecl(Decl*) {
     return true;
   }
   bool WalkUpFromDecl(Decl* decl) {
+    if (!derived().WalkUpFromStmt(decl)) return false;
     return derived().VisitDecl(decl);
   }
 
@@ -51,7 +88,7 @@ public:
     if (!derived().WalkUpFromVariableDecl(decl)) return false;
     return true;
   }
-  bool VisitVariableDecl(VariableDecl* decl) {
+  bool VisitVariableDecl(VariableDecl*) {
     return true;
   }
   bool WalkUpFromVariableDecl(VariableDecl* decl) {
@@ -70,7 +107,7 @@ public:
 
     return true;
   }
-  bool VisitFunctionDecl(FunctionDecl* decl) {
+  bool VisitFunctionDecl(FunctionDecl*) {
     return true;
   }
   bool WalkUpFromFunctionDecl(FunctionDecl* decl) {
@@ -88,6 +125,7 @@ namespace {
     ASTPrinterVisitor(ostream& output)
       : output_(output)
       , parent_("Module")
+      , unique_index_(0)
     {
       output_ << "digraph G {\n";
     }
@@ -97,8 +135,10 @@ namespace {
     }
 
     bool VisitFunctionDecl(FunctionDecl* decl) {
-      string node_name = string("FunctionDecl_")
-                         + decl->GetName().GetIdentifier().data();
+      string sub_node_name = string("FunctionDecl_")
+                             + decl->GetName().GetIdentifier().data();
+      string node_name = make_node_name(sub_node_name);
+
       output_ << node_name << " [shape=record,label=\""
               << "{FunctionDecl|{<name> "
               << decl->GetName().GetIdentifier().data();
@@ -110,25 +150,25 @@ namespace {
         output_ << "|<args> Args";
       }
 
+      if (decl->GetBody()) {
+        output_ << "|<body> Body";
+      }
+
       output_ << "}}\"];\n";
       add_child(node_name);
 
       // Output arguments.
       {
-        parent_raii parent(this, node_name+":args");
-        unsigned arg_index = 0;
+        parent_raii parent(this, sub_node_name+":args");
         for (auto& arg : decl->args_range()) {
-          // Format a unique name for the node.
-          stringstream arg_node_name;
-          arg_node_name << "VariableDecl_" << node_name << "_arg" << arg_index;
-
-          print_variable_decl(arg_node_name.str(),
-                              arg->GetName().GetIdentifier(),
-                              arg->GetType().GetIdentifier());
-          add_child(arg_node_name.str());
-
-          ++arg_index;
+          VisitVariableDecl(arg.get());
         }
+      }
+
+      // Output body.
+      if (decl->GetBody()) {
+        parent_raii parent(this, sub_node_name+":body");
+        VisitBlockStmt(decl->GetBody());
       }
 
       // Don't visit any more children, since we've already visited
@@ -137,17 +177,44 @@ namespace {
     }
 
     bool VisitVariableDecl(VariableDecl* decl) {
-      stringstream node_name;
-      node_name << "VariableDecl_" << decl->GetName().GetIdentifier().data();
-      print_variable_decl(node_name.str(),
+      stringstream node_name_stm;
+      node_name_stm << "VariableDecl_"
+                    << decl->GetName().GetIdentifier().data();
+      string node_name = make_node_name(node_name_stm.str());
+      
+      print_variable_decl(node_name,
                           decl->GetName().GetIdentifier(),
                           decl->GetType().GetIdentifier());
-      add_child(node_name.str());
+      add_child(node_name);
+      return true;
+    }
+
+    bool VisitBlockStmt(BlockStmt* stmt) {
+      stringstream node_name_stm;
+      node_name_stm << "BlockStmt" << make_unique_index();
+      string sub_node_name = node_name_stm.str();
+      string node_name = make_node_name(sub_node_name);
+
+      output_ << node_name
+              << "[label=\"" << sub_node_name << "\"];\n";
+
+      add_child(node_name);
       return true;
     }
   private:
     ostream& output_;
     string parent_;
+    unsigned unique_index_;
+
+    unsigned make_unique_index() {
+      return unique_index_++;
+    }
+
+    string make_node_name(StringRef child_name) const {
+      string node_name = parent_ + '_' + child_name.data();
+      replace(node_name.begin(), node_name.end(), ':', '_');
+      return node_name;
+    }
 
     void add_child(StringRef name) {
       output_ << parent_ << " -> " << name.data() << ";\n";
@@ -159,7 +226,8 @@ namespace {
         : instance_(instance)
         , old_parent_(instance->parent_)
       {
-        instance_->parent_ = new_parent;
+        instance_->parent_ += '_';
+        instance_->parent_ += new_parent;
       }
       ~parent_raii() {
         instance_->parent_ = old_parent_;

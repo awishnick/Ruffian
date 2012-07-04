@@ -1,5 +1,5 @@
-DIAG(expected_top_level_decl,
-     "Expected a top-level declaration, which starts with 'func' or 'var'.")
+DIAG(expected_decl,
+     "Expected a declaration, which starts with 'func' or 'var'.")
 DIAG(expected_identifier_after_func,
      "Expected an identifier after 'func'.")
 DIAG(expected_lparen_to_begin_function_args,
@@ -17,8 +17,6 @@ DIAG(expected_function_return_type,
      "Expected the function's return type after '->'.")
 DIAG(expected_lbrace_for_function_body,
      "Expected '{' to begin the function body.")
-DIAG(expected_rbrace_after_function_body,
-     "Expected '}' after the function body.")
 DIAG(expected_type_ident_in_func_arg_list,
      "Expected a parameter type in the function argument list.")
 DIAG(expected_name_ident_in_func_arg_list,
@@ -29,4 +27,8 @@ DIAG(expected_type_in_var_decl,
      "Expected a type after the name in the variable declaration.")
 DIAG(expected_semicolon_after_var_decl,
      "Expected a semicolon at the end of the variable declaration.")
+DIAG(expected_rbrace_after_block_stmt,
+     "Expected '}' at the end of the block statement.")
+DIAG(error_parsing_function_body,
+     "Encountered an error parsing the function body.")
 #undef DIAG

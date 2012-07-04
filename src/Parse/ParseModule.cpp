@@ -11,7 +11,7 @@ unique_ptr<Module> Parser::ParseModule() {
   auto module = make_unique<Module>();
 
   while (lex_.GetCurToken().GetKind() != Token::eof) {
-    auto decl = parseTopLevelDecl();
+    auto decl = parseDecl();
     if (!decl) {
       return nullptr;
     }

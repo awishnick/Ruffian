@@ -1,4 +1,4 @@
-func addtwo(int a, int b) -> int {
+func addtwo(a int, b int) -> int {
 
 }
 

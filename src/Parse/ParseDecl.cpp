@@ -14,7 +14,7 @@
 using namespace std;
 using llvm::StringRef;
 
-unique_ptr<Decl> Parser::parseTopLevelDecl() {
+unique_ptr<Decl> Parser::parseDecl() {
   if (lex_.GetCurToken().GetKind() == Token::kw_func) {
     return parseFunctionDecl();
   }
@@ -23,7 +23,7 @@ unique_ptr<Decl> Parser::parseTopLevelDecl() {
     return parseVariableDecl();
   }
 
-  diagnose(diag::expected_top_level_decl);
+  diagnose(diag::expected_decl);
   return nullptr;
 }
 
@@ -31,7 +31,7 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   /* function_decl
       : func identifier ( function_arg_list ) -> identifier { stmt }
       | func identifier ( ) -> identifier { stmt }
-      : func identifier ( function_arg_list ) { stmt }
+      | func identifier ( function_arg_list ) { stmt }
       | func identifier ( ) { stmt }
    */
 
@@ -78,6 +78,16 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   }
 
 
+  // Now build the decls for each argument.
+  vector<unique_ptr<VariableDecl>> arg_decls;
+  arg_decls.reserve(args.size());
+  transform(args.begin(), args.end(),
+            back_inserter(arg_decls),
+            [](const function_arg_pair& arg_pair) {
+              return make_unique<VariableDecl>(arg_pair.first,
+                                               arg_pair.second);
+            });
+
   // If there's an arrow, parse the return type.
   unique_ptr<Token> maybe_return_type;
   if (lex_.GetCurToken().GetKind() == Token::arrow) {
@@ -93,38 +103,19 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
     maybe_return_type.reset(new Token(ret_type_tok));
   }
 
-  // Expect {
-  if (!expectAndConsume(Token::lbrace)) {
+  // Expect {, but don't consume it, since it's up to the
+  // function body parser to do that.
+  if (lex_.GetCurToken().GetKind() != Token::lbrace) {
     diagnose(diag::expected_lbrace_for_function_body);
-    // For now, no recovery. Once a diagnostic is added, we could
-    // recover by pretending we saw the brace.
+    // For now, no recovery. We could recover by
+    // pretending we saw the brace.
     return nullptr;
   }
 
-  // Now build the decl.
-  vector<unique_ptr<VariableDecl>> arg_decls;
-  arg_decls.reserve(args.size());
-  transform(args.begin(), args.end(),
-            back_inserter(arg_decls),
-            [](const function_arg_pair& arg_pair) {
-              return make_unique<VariableDecl>(arg_pair.first,
-                                               arg_pair.second);
-            });
-
-
-  auto body = parseStmt();
-#if 0
+  // Parse the body
+  auto body = parseBlockStmt();
   if (!body) {
-    // TODO: error
-    return nullptr;
-  }
-#endif
-
-  // Expect }
-  if (!expectAndConsume(Token::rbrace)) {
-    diagnose(diag::expected_rbrace_after_function_body);
-    // TODO: Recovery
-    return nullptr;
+    diagnose(diag::error_parsing_function_body);
   }
 
   if (maybe_return_type) {

@@ -24,7 +24,7 @@ VariableDecl::~VariableDecl() {}
 FunctionDecl::FunctionDecl(Token name,
                            Token return_type,
                            vector<unique_ptr<VariableDecl>> args,
-                           unique_ptr<Stmt> body)
+                           unique_ptr<BlockStmt> body)
   : name_(name)
   , return_type_(new Token(return_type))
   , args_(move(args))
@@ -34,7 +34,7 @@ FunctionDecl::FunctionDecl(Token name,
 
 FunctionDecl::FunctionDecl(Token name,
                            vector<unique_ptr<VariableDecl>> args,
-                           unique_ptr<Stmt> body)
+                           unique_ptr<BlockStmt> body)
   : name_(name)
   , args_(move(args))
   , body_(move(body))
