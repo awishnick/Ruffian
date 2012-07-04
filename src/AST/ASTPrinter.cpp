@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 using namespace std;
+using llvm::StringRef;
 
 template <class Derived>
 class ASTVisitor {
@@ -121,12 +122,9 @@ namespace {
           stringstream arg_node_name;
           arg_node_name << "VariableDecl_" << node_name << "_arg" << arg_index;
 
-          output_ << arg_node_name.str()
-                  << " [shape=record,label=\""
-                  << "{VariableDecl|{"
-                  << arg->GetName().GetIdentifier().data()
-                  << "|" << arg->GetType().GetIdentifier().data()
-                  << "}}\"];\n";
+          print_variable_decl(arg_node_name.str(),
+                              arg->GetName().GetIdentifier(),
+                              arg->GetType().GetIdentifier());
           add_child(arg_node_name.str());
 
           ++arg_index;
@@ -139,14 +137,19 @@ namespace {
     }
 
     bool VisitVariableDecl(VariableDecl* decl) {
-      add_child(decl->GetName().GetIdentifier());
+      stringstream node_name;
+      node_name << "VariableDecl_" << decl->GetName().GetIdentifier().data();
+      print_variable_decl(node_name.str(),
+                          decl->GetName().GetIdentifier(),
+                          decl->GetType().GetIdentifier());
+      add_child(node_name.str());
       return true;
     }
   private:
     ostream& output_;
     string parent_;
 
-    void add_child(llvm::StringRef name) {
+    void add_child(StringRef name) {
       output_ << parent_ << " -> " << name.data() << ";\n";
     }
 
@@ -165,6 +168,17 @@ namespace {
         ASTPrinterVisitor* instance_;
         string old_parent_;
     };
+
+    void print_variable_decl(StringRef node_name, StringRef name,
+                             StringRef type) {
+      output_ << node_name.data()
+              << " [shape=record,label=\""
+              << "{VariableDecl|{"
+              << name.data()
+              << "|" << type.data()
+              << "}}\"];\n";
+
+    }
   };
 }
 

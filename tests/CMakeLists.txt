@@ -24,3 +24,5 @@ add_test(lex_filecheck
   ${TESTER_PATH} ${DRIVER_PATH} ${FILE_CHECK_PATH} ${TESTS_PATH}/Lex/test.rf)
 add_test(parse_empty_function_decls
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/empty_function_decls.rf)
+add_test(parse_variable_decl
+  ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/variable_decl.rf)

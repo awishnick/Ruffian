@@ -36,7 +36,7 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
    */
 
   if (!expectAndConsume(Token::kw_func)) {
-    llvm_unreachable("This should only be called with a func keyword");
+    llvm_unreachable("This should only be called with the 'func' keyword");
   }
 
   // Get the name
@@ -185,8 +185,33 @@ bool Parser::parseFunctionArgPair(function_arg_pair* arg) {
 }
 
 unique_ptr<VariableDecl> Parser::parseVariableDecl() {
-  // TODO
-  assert(false);
-  return nullptr;
+  /* variable_decl
+      : var identifier identifier ;
+  */
+
+  if (!expectAndConsume(Token::kw_var)) {
+    llvm_unreachable("This should only be called with the 'var' keyword");
+  }
+
+  // Get the name
+  Token name_tok;
+  if (!expectAndConsumeIdentifier(&name_tok)) {
+    diagnose(diag::expected_identifier_after_var);
+    return nullptr;
+  }
+
+  // Get the type
+  Token type_tok;
+  if (!expectAndConsumeIdentifier(&type_tok)) {
+    diagnose(diag::expected_type_in_var_decl);
+    return nullptr;
+  }
+
+  // Expect a semicolon. Recover by pretending it was found.
+  if (!expectAndConsume(Token::semicolon)) {
+    diagnose(diag::expected_semicolon_after_var_decl);
+  }
+
+  return make_unique<VariableDecl>(name_tok, type_tok);
 }
 

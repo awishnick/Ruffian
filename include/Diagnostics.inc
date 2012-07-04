@@ -23,4 +23,10 @@ DIAG(expected_type_ident_in_func_arg_list,
      "Expected a parameter type in the function argument list.")
 DIAG(expected_name_ident_in_func_arg_list,
      "Expected a parameter name in the function argument list.")
+DIAG(expected_identifier_after_var,
+     "Expected an identifier after 'var'.")
+DIAG(expected_type_in_var_decl,
+     "Expected a type after the name in the variable declaration.")
+DIAG(expected_semicolon_after_var_decl,
+     "Expected a semicolon at the end of the variable declaration.")
 #undef DIAG
