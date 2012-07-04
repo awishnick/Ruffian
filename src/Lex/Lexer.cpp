@@ -126,6 +126,7 @@ static Token GetNextToken(stringstream& input,
     case '[': return Token::Create(Token::lbracket);
     case ']': return Token::Create(Token::rbracket);
     case ';': return Token::Create(Token::semicolon);
+    case ',': return Token::Create(Token::comma);
     case '=': return Token::Create(Token::assign);
     case '+': return Token::Create(Token::plus);
     case '-':

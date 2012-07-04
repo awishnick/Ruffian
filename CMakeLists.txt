@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 set(PROJECT_NAME_STR ruffian)
 project(${PROJECT_NAME_STR})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra")
 
 set(LLVM_ROOT "" CACHE PATH "Root of LLVM install.")
 

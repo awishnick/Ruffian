@@ -1,11 +1,22 @@
 #include <iostream>
+#include "AST/ASTPrinter.h"
+#include "AST/Module.h"
 #include "Lex/Lexer.h"
+#include "Parse/Parser.h"
 #include "llvm/Support/CommandLine.h"
 #include <fstream>
 #include <streambuf>
 #include <string>
 namespace cl = llvm::cl;
 using namespace std;
+
+cl::opt<string> input_filename(cl::Positional, cl::desc("<input file>"),
+                               cl::init(""));
+cl::opt<bool> only_lex("only-lex",
+                       cl::desc("Run the input file through the lexer and "
+                                "output the tokens"));
+cl::opt<bool> dump_ast("dump-ast",
+                       cl::desc("Parse and output the abstract syntax tree"));
 
 // Throws ios_base::failure if there's an error reading the file
 static int LexAndDump(istream& input, ostream& stream) {
@@ -55,6 +66,9 @@ static int LexAndDump(istream& input, ostream& stream) {
       case Token::semicolon:
         stream << ";";
         break;
+      case Token::comma:
+        stream << ",";
+        break;
       case Token::assign:
         stream << "=";
         break;
@@ -82,30 +96,67 @@ static int LexAndDump(istream& input, ostream& stream) {
   return 0;
 }
 
-cl::opt<string> input_filename(cl::Positional, cl::desc("<input file>"),
-                               cl::init(""));
-cl::opt<bool> only_lex("only-lex",
-                       cl::desc("Run the input file through the lexer and "
-                                "output the tokens"));
+int RunOnlyLex() {
+  try {
+    istream* input;
+    ifstream file;
+    if (!input_filename.empty()) {
+      file.exceptions(ios_base::badbit | ios_base::failbit);
+      file.open(input_filename);
+      input = &file;
+    } else {
+      input = &cin;
+    }
+    return LexAndDump(*input, cout);
+  } catch (const ios_base::failure& e) {
+    cerr << "Error reading from \"" << input_filename << "\"" << endl;
+    return 1;
+  }
+  return 0;
+}
+
+int RunDumpAST() {
+  try {
+    istream* input;
+    ifstream file;
+    if (!input_filename.empty()) {
+      file.exceptions(ios_base::badbit | ios_base::failbit);
+      file.open(input_filename);
+      input = &file;
+    } else {
+      input = &cin;
+    }
+
+    *input >> noskipws;
+    Lexer lex((string(istreambuf_iterator<char>(*input),
+                      istreambuf_iterator<char>())));
+
+    Parser parse(lex);
+    auto module = parse.ParseModule();
+
+    if (!module) {
+      cerr << "Parse error, no module was created.\n";
+      return 1;
+    }
+    
+    ASTPrinter printer(cout);
+    printer.PrintModule(module.get());
+  } catch (const ios_base::failure& e) {
+    cerr << "Error reading from \"" << input_filename << "\"" << endl;
+    return 1;
+  }
+  return 0;
+}
+               
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
 
   if (only_lex) {
-    try {
-      istream* input;
-      ifstream file;
-      if (!input_filename.empty()) {
-        file.exceptions(ios_base::badbit | ios_base::failbit);
-        file.open(input_filename);
-        input = &file;
-      } else {
-        input = &cin;
-      }
-      return LexAndDump(*input, cout);
-    } catch (const ios_base::failure& e) {
-      cerr << "Error reading from \"" << input_filename << "\"" << endl;
-      return 1;
-    }
+    return RunOnlyLex();
+  }
+
+  if (dump_ast) {
+    return RunDumpAST();
   }
 
   return 0;

@@ -1,0 +1,8 @@
+func addtwo(int a, int b) -> int {
+
+}
+
+func noret() {
+
+}
+

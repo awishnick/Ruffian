@@ -21,6 +21,7 @@ public:
     lbracket,
     rbracket,
     semicolon,
+    comma,
 
     assign,
 
