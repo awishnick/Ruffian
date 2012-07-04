@@ -34,7 +34,9 @@ public:
     if (!derived().WalkUpFromStmt(stmt)) return false;
 
     if (auto child = dynamic_cast<BlockStmt*>(stmt)) {
-      return derived().TraveseVariableDecl(child);
+      return derived().TraverseBlockStmt(child);
+    } else if (auto child = dynamic_cast<Decl*>(stmt)) {
+      return derived().TraverseDecl(child);
     } else {
       llvm_unreachable("Unimplemented subclass");
     }
@@ -197,8 +199,14 @@ namespace {
 
       output_ << node_name
               << "[label=\"" << sub_node_name << "\"];\n";
-
       add_child(node_name);
+
+      // Output each child statement.
+      parent_raii parent(this, sub_node_name);
+      for (auto& child : stmt->stmts_range()) {
+        TraverseStmt(child.get());
+      }
+
       return true;
     }
   private:
@@ -226,6 +234,9 @@ namespace {
         : instance_(instance)
         , old_parent_(instance->parent_)
       {
+        std::replace(instance_->parent_.begin(),
+                     instance_->parent_.end(),
+                     ':', '_');
         instance_->parent_ += '_';
         instance_->parent_ += new_parent;
       }

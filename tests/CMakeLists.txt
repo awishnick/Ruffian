@@ -26,3 +26,5 @@ add_test(parse_empty_function_decls
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/empty_function_decls.rf)
 add_test(parse_variable_decl
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/variable_decl.rf)
+add_test(parse_function_with_local_vars
+  ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/function_with_local_vars.rf)
