@@ -161,16 +161,16 @@ namespace {
 
       // Output arguments.
       {
-        parent_raii parent(this, sub_node_name+":args");
+        parent_raii parent(this, node_name+":args");
         for (auto& arg : decl->args_range()) {
-          VisitVariableDecl(arg.get());
+          TraverseVariableDecl(arg.get());
         }
       }
 
       // Output body.
       if (decl->GetBody()) {
-        parent_raii parent(this, sub_node_name+":body");
-        VisitBlockStmt(decl->GetBody());
+        parent_raii parent(this, node_name+":body");
+        TraverseBlockStmt(decl->GetBody());
       }
 
       // Don't visit any more children, since we've already visited
@@ -184,9 +184,13 @@ namespace {
                     << decl->GetName().GetIdentifier().data();
       string node_name = make_node_name(node_name_stm.str());
       
-      print_variable_decl(node_name,
-                          decl->GetName().GetIdentifier(),
-                          decl->GetType().GetIdentifier());
+      output_ << node_name.data()
+              << " [shape=record,label=\""
+              << "{VariableDecl|{"
+              << decl->GetName().GetIdentifier().data()
+              << "|" << decl->GetType().GetIdentifier().data()
+              << "}}\"];\n";
+
       add_child(node_name);
       return true;
     }
@@ -194,15 +198,14 @@ namespace {
     bool VisitBlockStmt(BlockStmt* stmt) {
       stringstream node_name_stm;
       node_name_stm << "BlockStmt" << make_unique_index();
-      string sub_node_name = node_name_stm.str();
-      string node_name = make_node_name(sub_node_name);
+      string node_name = make_node_name(node_name_stm.str());
 
       output_ << node_name
-              << "[label=\"" << sub_node_name << "\"];\n";
+              << "[label=\"BlockStmt\"];\n";
       add_child(node_name);
 
       // Output each child statement.
-      parent_raii parent(this, sub_node_name);
+      parent_raii parent(this, node_name);
       for (auto& child : stmt->stmts_range()) {
         TraverseStmt(child.get());
       }
@@ -218,10 +221,10 @@ namespace {
       return unique_index_++;
     }
 
-    string make_node_name(StringRef child_name) const {
-      string node_name = parent_ + '_' + child_name.data();
-      replace(node_name.begin(), node_name.end(), ':', '_');
-      return node_name;
+    string make_node_name(StringRef child_name) {
+      stringstream name_stm;
+      name_stm << child_name.data() << make_unique_index();
+      return name_stm.str();
     }
 
     void add_child(StringRef name) {
@@ -234,11 +237,7 @@ namespace {
         : instance_(instance)
         , old_parent_(instance->parent_)
       {
-        std::replace(instance_->parent_.begin(),
-                     instance_->parent_.end(),
-                     ':', '_');
-        instance_->parent_ += '_';
-        instance_->parent_ += new_parent;
+        instance_->parent_ = new_parent;
       }
       ~parent_raii() {
         instance_->parent_ = old_parent_;
@@ -248,16 +247,6 @@ namespace {
         string old_parent_;
     };
 
-    void print_variable_decl(StringRef node_name, StringRef name,
-                             StringRef type) {
-      output_ << node_name.data()
-              << " [shape=record,label=\""
-              << "{VariableDecl|{"
-              << name.data()
-              << "|" << type.data()
-              << "}}\"];\n";
-
-    }
   };
 }
 
