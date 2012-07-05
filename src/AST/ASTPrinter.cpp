@@ -1,5 +1,6 @@
 #include "AST/ASTPrinter.h"
 #include "AST/Decl.h"
+#include "AST/Expr.h"
 #include "AST/Module.h"
 #include "AST/Stmt.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -98,7 +99,6 @@ public:
     return derived().VisitVariableDecl(decl);
   }
 
-
   // FunctionDecl
   bool TraverseFunctionDecl(FunctionDecl* decl) {
     if (!derived().WalkUpFromFunctionDecl(decl)) return false;
@@ -115,6 +115,36 @@ public:
   bool WalkUpFromFunctionDecl(FunctionDecl* decl) {
     if (!derived().WalkUpFromDecl(decl)) return false;
     return derived().VisitFunctionDecl(decl);
+  }
+
+  // Expr
+  bool TraverseExpr(Expr* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+
+    if (auto child = dynamic_cast<NumericLiteral*>(expr)) {
+      return derived().VisitNumericLiteral(child);
+    } else {
+      llvm_unreachable("Unimplemented subclass");
+    }
+  }
+  bool VisitExpr(Expr*) {
+    return true;
+  }
+  bool WalkUpFromExpr(Expr* expr) {
+    return derived().VisitExpr(expr);
+  }
+
+  // NumericLiteral
+  bool TraverseNumericLiteral(NumericLiteral* expr) {
+    if (!derived().WalkUpFromNumericLiteral(expr)) return false;
+    return true;
+  }
+  bool VisitNumericLiteral(NumericLiteral*) {
+    return true;
+  }
+  bool WalkUpFromNumericLiteral(NumericLiteral* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+    return derived().VisitNumericLiteral(expr);
   }
 
 private:
@@ -188,10 +218,21 @@ namespace {
               << " [shape=record,label=\""
               << "{VariableDecl|{"
               << decl->GetName().GetIdentifier().data()
-              << "|" << decl->GetType().GetIdentifier().data()
-              << "}}\"];\n";
+              << "|" << decl->GetType().GetIdentifier().data();
+
+      if (decl->GetInitializer()) {
+        output_ << "|<init> Init";
+      }
+
+      output_ << "}}\"];\n";
 
       add_child(node_name);
+
+      if (Expr* init = decl->GetInitializer()) {
+        parent_raii parent(this, node_name+":init");
+        TraverseExpr(init);
+      }
+
       return true;
     }
 
@@ -209,6 +250,20 @@ namespace {
       for (auto& child : stmt->stmts_range()) {
         TraverseStmt(child.get());
       }
+
+      return true;
+    }
+
+    bool VisitNumericLiteral(NumericLiteral* expr) {
+      stringstream node_name_stm;
+      node_name_stm << "BlockStmt" << make_unique_index();
+      string node_name = make_node_name(node_name_stm.str());
+
+      llvm::APInt value = expr->GetValue().GetIntLiteral();
+      output_ << node_name
+              << "[label=\"" << value.toString(10, /*signed*/true)
+              << "\"];\n";
+      add_child(node_name);
 
       return true;
     }

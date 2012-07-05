@@ -1,5 +1,6 @@
 #include "Parse/Parser.h"
 #include "AST/Decl.h"
+#include "AST/Expr.h"
 #include "AST/Stmt.h"
 #include "Lex/Lexer.h"
 #include "Support/make_unique.h"
@@ -8,20 +9,26 @@
 #include <vector>
 using namespace std;
 
-std::unique_ptr<Stmt> Parser::parseStmt() {
+unique_ptr<Stmt> Parser::parseStmt() {
   /* statement
       : block_statement
       | declaration
+      | expression_statement
   */
 
   if (lex_.GetCurToken().GetKind() == Token::lbrace) {
     return parseBlockStmt();
   }
 
-  return parseDecl();
+  if (lex_.GetCurToken().GetKind() == Token::kw_func
+      || lex_.GetCurToken().GetKind() == Token::kw_var ) {
+    return parseDecl();
+  }
+
+  return parseExprStmt();
 }
 
-std::unique_ptr<BlockStmt> Parser::parseBlockStmt() {
+unique_ptr<BlockStmt> Parser::parseBlockStmt() {
   /* block_statement
       : { }
       | { statement_list }
@@ -39,7 +46,7 @@ std::unique_ptr<BlockStmt> Parser::parseBlockStmt() {
          && lex_.GetCurToken().GetKind() != Token::eof) {
     auto stmt = parseStmt();
     if (!stmt) {
-      // Recover by finding the matching brace
+      // Recover by finding the matching brace.
       ignoreTokensUntil(Token::rbrace);
       break;
     }
@@ -59,3 +66,20 @@ std::unique_ptr<BlockStmt> Parser::parseBlockStmt() {
 
   return make_unique<BlockStmt>(move(stmts));
 }  
+
+unique_ptr<ExprStmt> Parser::parseExprStmt() {
+  /* expression_statement
+      : expression ;
+  */
+
+  auto expr = parseExpr();
+  if (!expr) return nullptr;
+
+  // Expect ;
+  if (!expectAndConsume(Token::semicolon)) {
+    // Recover by pretending the semicolon was found.
+    diagnose(diag::expected_semicolon_after_expression);
+  }
+
+  return make_unique<ExprStmt>(move(expr));
+}

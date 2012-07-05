@@ -178,6 +178,7 @@ bool Parser::parseFunctionArgPair(function_arg_pair* arg) {
 unique_ptr<VariableDecl> Parser::parseVariableDecl() {
   /* variable_decl
       : var identifier identifier ;
+      : var identifier identifier = expression ;
   */
 
   if (!expectAndConsume(Token::kw_var)) {
@@ -198,11 +199,25 @@ unique_ptr<VariableDecl> Parser::parseVariableDecl() {
     return nullptr;
   }
 
+  // If the next token is '=', then consume it and parse the
+  // initializer expression.
+  unique_ptr<Expr> initializer;
+  if (lex_.GetCurToken().GetKind() == Token::assign) {
+    lex_.ConsumeCurToken();
+    initializer = parseExpr();
+
+    // If there was an error parsing the initializer, recover
+    // by finding the semicolon.
+    if (!initializer) {
+      ignoreTokensUntil(Token::semicolon);
+    }
+  }
+
   // Expect a semicolon. Recover by pretending it was found.
   if (!expectAndConsume(Token::semicolon)) {
     diagnose(diag::expected_semicolon_after_var_decl);
   }
 
-  return make_unique<VariableDecl>(name_tok, type_tok);
+  return make_unique<VariableDecl>(name_tok, type_tok, move(initializer));
 }
 

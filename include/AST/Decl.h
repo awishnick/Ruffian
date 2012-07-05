@@ -23,6 +23,8 @@ public:
 
   const Token& GetName() const { return name_; }
   const Token& GetType() const { return type_; }
+  const Expr* GetInitializer() const { return initializer_.get(); }
+  Expr* GetInitializer() { return initializer_.get(); }
 private:
   Token name_;
   Token type_;

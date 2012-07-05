@@ -1,12 +1,14 @@
 add_library(ruffian STATIC
   AST/ASTPrinter.cpp
   AST/Decl.cpp
+  AST/Expr.cpp
   AST/Module.cpp
   AST/Stmt.cpp
   Lex/Lexer.cpp
   Lex/Token.cpp
   Parse/Parser.cpp
   Parse/ParseDecl.cpp
+  Parse/ParseExpr.cpp
   Parse/ParseModule.cpp
   Parse/ParseStmt.cpp
 )

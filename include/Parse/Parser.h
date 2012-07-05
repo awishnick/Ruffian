@@ -8,7 +8,7 @@
 #include <vector>
 
 class Lexer; class Module; class Decl; class FunctionDecl; class VariableDecl;
-class Stmt; class BlockStmt;
+class Stmt; class BlockStmt; class Expr; class NumericLiteral; class ExprStmt;
 
 class Parser {
 public:
@@ -28,6 +28,9 @@ private:
   // We expect an identifier. If it is found, write it to tok and return true.
   // Otherwise, tok is unmodified, and return false.
   bool expectAndConsumeIdentifier(Token* tok);
+  // We expect a numeric literal. If it is found, write it to tok and return
+  // true. Otherwise, tok is unmodified, and return false.
+  bool expectAndConsumeNumericLiteral(Token* tok);
   // Ignores tokens until the given token kind is found, leaving this token
   // in the buffer. If EOF is hit first, returns false.
   bool ignoreTokensUntil(Token::Kind kind);
@@ -55,5 +58,12 @@ private:
   ////////////////////////////////////////
   std::unique_ptr<Stmt> parseStmt();
   std::unique_ptr<BlockStmt> parseBlockStmt();
+  std::unique_ptr<ExprStmt> parseExprStmt();
+  
+  ////////////////////////////////////////
+  // Stmt
+  ////////////////////////////////////////
+  std::unique_ptr<Expr> parseExpr();
+  std::unique_ptr<NumericLiteral> parseNumericLiteral();
 };
 

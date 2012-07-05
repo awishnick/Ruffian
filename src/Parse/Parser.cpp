@@ -40,6 +40,15 @@ bool Parser::expectAndConsumeIdentifier(Token* tok) {
   }
 }
 
+bool Parser::expectAndConsumeNumericLiteral(Token* tok) {
+  if (lex_.GetCurToken().GetKind() == Token::int_literal) {
+    *tok = lex_.ConsumeCurToken();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool Parser::ignoreTokensUntil(Token::Kind kind) {
   while (lex_.GetCurToken().GetKind() != kind) {
     if (lex_.GetCurToken().GetKind() == Token::eof) {

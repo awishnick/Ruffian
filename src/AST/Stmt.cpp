@@ -1,4 +1,5 @@
 #include "AST/Stmt.h"
+#include "AST/Expr.h"
 #include "Support/iterator_range.h"
 #include <memory>
 #include <utility>
@@ -13,3 +14,9 @@ BlockStmt::BlockStmt(vector<unique_ptr<Stmt>> stmts)
 
 BlockStmt::~BlockStmt() {}
 
+ExprStmt::ExprStmt(unique_ptr<Expr> expr)
+  : expr_(move(expr))
+{
+}
+
+ExprStmt::~ExprStmt() {}

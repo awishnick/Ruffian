@@ -1,0 +1,7 @@
+var a int = 2;
+var b int = 3;
+
+func test() {
+  var c int = 5234;
+  var d int = 90;
+}

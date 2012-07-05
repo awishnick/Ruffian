@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+class Expr;
+
 class Stmt {
 public:
   virtual ~Stmt();
@@ -27,5 +29,15 @@ public:
 private:
   std::vector<std::unique_ptr<Stmt>> stmts_;
   
+};
+
+class ExprStmt : public Stmt {
+public:
+  explicit ExprStmt(std::unique_ptr<Expr> expr);
+  virtual ~ExprStmt();
+
+  const Expr* GetExpr() const { return expr_.get(); }
+private:
+  std::unique_ptr<Expr> expr_;
 };
 
