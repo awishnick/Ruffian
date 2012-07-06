@@ -31,8 +31,10 @@ DIAG(expected_rbrace_after_block_stmt,
      "Expected '}' at the end of the block statement.")
 DIAG(error_parsing_function_body,
      "Encountered an error parsing the function body.")
-DIAG(expected_expression,
-     "Expected an expression.")
+DIAG(expected_primary_expression,
+     "Expected a primary expression.")
 DIAG(expected_semicolon_after_expression,
      "Expected ';' after the expression.")
+DIAG(expected_rparen_after_expression,
+     "Expected ')' after the expression.")
 #undef DIAG

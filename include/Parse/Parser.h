@@ -68,5 +68,6 @@ private:
   std::unique_ptr<Expr> parsePrimaryExpr();
   std::unique_ptr<IdentifierExpr> parseIdentifierExpr();
   std::unique_ptr<NumericLiteral> parseNumericLiteral();
+  std::unique_ptr<Expr> parseParenExpr();
 };
 

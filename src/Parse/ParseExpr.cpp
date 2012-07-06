@@ -14,6 +14,7 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
   /* primary_expression
       : identifier
       | numeric_literal
+      | ( expression )
   */
 
   if (lex_.GetCurToken().GetKind() == Token::ident) {
@@ -24,7 +25,11 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
     return parseNumericLiteral();
   }
 
-  diagnose(diag::expected_expression);
+  if (lex_.GetCurToken().GetKind() == Token::lparen) {
+    return parseParenExpr();
+  }
+
+  diagnose(diag::expected_primary_expression);
   return nullptr;
 
 }
@@ -45,4 +50,25 @@ unique_ptr<NumericLiteral> Parser::parseNumericLiteral() {
   }
 
   return make_unique<NumericLiteral>(literal_tok);
+}
+
+unique_ptr<Expr> Parser::parseParenExpr() {
+  /* paren_expression
+      : ( expression )
+  */
+
+  // Expect '('
+  if (!expectAndConsume(Token::lparen)) {
+    llvm_unreachable("Expected a '('");
+  }
+
+  auto expr = parseExpr();
+
+  // Expect ')'
+  if (!expectAndConsume(Token::rparen)) {
+    diagnose(diag::expected_rparen_after_expression);
+    // Recover by pretending the rparen was found
+  }
+
+  return expr;
 }
