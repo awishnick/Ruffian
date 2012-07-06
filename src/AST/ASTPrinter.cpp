@@ -121,7 +121,9 @@ public:
   bool TraverseExpr(Expr* expr) {
     if (!derived().WalkUpFromExpr(expr)) return false;
 
-    if (auto child = dynamic_cast<NumericLiteral*>(expr)) {
+    if (auto child = dynamic_cast<IdentifierExpr*>(expr)) {
+      return derived().VisitIdentifierExpr(child);
+    } else if (auto child = dynamic_cast<NumericLiteral*>(expr)) {
       return derived().VisitNumericLiteral(child);
     } else {
       llvm_unreachable("Unimplemented subclass");
@@ -132,6 +134,19 @@ public:
   }
   bool WalkUpFromExpr(Expr* expr) {
     return derived().VisitExpr(expr);
+  }
+
+  // IdentifierExpr
+  bool TraverseIdentifierExpr(IdentifierExpr* expr) {
+    if (!derived().WalkUpFromIdentifierExpr(expr)) return false;
+    return true;
+  }
+  bool VisitIdentifierExpr(IdentifierExpr*) {
+    return true;
+  }
+  bool WalkUpFromIdentifierExpr(IdentifierExpr* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+    return derived().VisitIdentifierExpr(expr);
   }
 
   // NumericLiteral
@@ -146,7 +161,6 @@ public:
     if (!derived().WalkUpFromExpr(expr)) return false;
     return derived().VisitNumericLiteral(expr);
   }
-
 private:
   Derived& derived() { return static_cast<Derived&>(*this); }
 };
@@ -254,9 +268,23 @@ namespace {
       return true;
     }
 
+    bool VisitIdentifierExpr(IdentifierExpr* expr) {
+      stringstream node_name_stm;
+      node_name_stm << "IdentifierExpr" << make_unique_index();
+      string node_name = make_node_name(node_name_stm.str());
+
+      Token ident = expr->GetIdentifier();
+      output_ << node_name
+              << "[label=\"" << ident.GetIdentifier().data()
+              << "\"];\n";
+      add_child(node_name);
+      
+      return true;
+    }
+
     bool VisitNumericLiteral(NumericLiteral* expr) {
       stringstream node_name_stm;
-      node_name_stm << "BlockStmt" << make_unique_index();
+      node_name_stm << "NumericLiteral" << make_unique_index();
       string node_name = make_node_name(node_name_stm.str());
 
       llvm::APInt value = expr->GetValue().GetIntLiteral();

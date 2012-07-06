@@ -7,9 +7,18 @@
 using namespace std;
 
 unique_ptr<Expr> Parser::parseExpr() {
-  /* expression
-      : numeric_literal
+  return parsePrimaryExpr();
+}
+
+unique_ptr<Expr> Parser::parsePrimaryExpr() {
+  /* primary_expression
+      : identifier
+      | numeric_literal
   */
+
+  if (lex_.GetCurToken().GetKind() == Token::ident) {
+    return parseIdentifierExpr();
+  }
 
   if (lex_.GetCurToken().GetKind() == Token::int_literal) {
     return parseNumericLiteral();
@@ -17,6 +26,16 @@ unique_ptr<Expr> Parser::parseExpr() {
 
   diagnose(diag::expected_expression);
   return nullptr;
+
+}
+
+unique_ptr<IdentifierExpr> Parser::parseIdentifierExpr() {
+  Token ident_tok;
+  if (!expectAndConsumeIdentifier(&ident_tok)) {
+    llvm_unreachable("Expected an identifier token");
+  }
+
+  return make_unique<IdentifierExpr>(ident_tok);
 }
 
 unique_ptr<NumericLiteral> Parser::parseNumericLiteral() {

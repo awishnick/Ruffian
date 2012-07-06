@@ -8,6 +8,16 @@ public:
 private:
 };
 
+class IdentifierExpr : public Expr {
+public:
+  explicit IdentifierExpr(Token ident);
+  virtual ~IdentifierExpr();
+
+  const Token& GetIdentifier() const { return ident_; }
+private:
+  Token ident_;
+};
+
 class NumericLiteral : public Expr {
 public:
   explicit NumericLiteral(Token value);
