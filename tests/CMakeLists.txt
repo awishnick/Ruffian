@@ -22,6 +22,8 @@ set(TESTS_PATH "${CMAKE_SOURCE_DIR}/tests")
 set(TESTER_PATH "${TESTS_PATH}/run_file_check.sh")
 add_test(lex_filecheck
   ${TESTER_PATH} ${DRIVER_PATH} ${FILE_CHECK_PATH} ${TESTS_PATH}/Lex/test.rf)
+add_test(lex_filecheck
+  ${TESTER_PATH} ${DRIVER_PATH} ${FILE_CHECK_PATH} ${TESTS_PATH}/Lex/negation.rf)
 add_test(parse_empty_function_decls
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/empty_function_decls.rf)
 add_test(parse_variable_decl
@@ -32,3 +34,5 @@ add_test(parse_function_with_local_vars
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/function_with_local_vars.rf)
 add_test(parse_unary_op
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/unary_op.rf)
+add_test(parse_binary_op
+  ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/binary_op.rf)

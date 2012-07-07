@@ -1,0 +1,2 @@
+var int d = 2 + -8;
+// CHECK: var IDENT(int) IDENT(d) = INT_LITERAL(2) + - INT_LITERAL(8) ;

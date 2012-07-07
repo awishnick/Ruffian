@@ -7,7 +7,117 @@
 using namespace std;
 
 unique_ptr<Expr> Parser::parseExpr() {
-  return parsePrimaryExpr();
+  // Expressions are parsed via operator precedence parsing.
+  auto primary = parsePrimaryExpr();
+  if (!primary) {
+    return nullptr;
+  }
+
+  return parseBinaryOpExprRHS(move(primary), 0);
+}
+
+static bool IsPrefixUnaryOpToken(const Token& tok) {
+  switch (tok.GetKind()) {
+  case Token::minus:
+    return true;
+  default:
+    return false;
+  };
+}
+
+static bool IsTokenABinaryOp(const Token& tok) {
+  switch (tok.GetKind()) {
+    case Token::assign:
+    case Token::plus:
+    case Token::minus:
+    case Token::star:
+    case Token::slash:
+      return true;
+    default:
+      return false;
+  };
+}
+
+static int GetBinaryOpPrecedence(const Token& tok) {
+  switch (tok.GetKind()) {
+    case Token::assign:
+      return 0;
+    case Token::plus:
+    case Token::minus:
+      return 10;
+    case Token::star:
+    case Token::slash:
+      return 20;
+    default:
+      llvm_unreachable("Not a binary operator");
+  };
+}
+
+static bool IsBinaryOpRightAssociative(const Token& tok) {
+  assert(IsTokenABinaryOp(tok) && "Token must be a binary operator");
+
+  switch (tok.GetKind()) {
+  case Token::assign:
+    return true;
+  default:
+    return false;
+  };
+}
+
+static bool IsTokenABinaryOpWithPrecedenceAtLeast(const Token& token,
+                                                  int min_precedence) {
+  if (!IsTokenABinaryOp(token)) return false;
+  return GetBinaryOpPrecedence(token) >= min_precedence;
+}
+
+static bool IsTokenABinaryOpWithPrecedenceGreaterThan(const Token& token,
+                                                      int min_precedence) {
+  if (!IsTokenABinaryOp(token)) return false;
+  return GetBinaryOpPrecedence(token) > min_precedence;
+}
+
+static bool IsTokenRightAssociativeWithPrecedence(const Token& token,
+                                                  int precedence) {
+  if (!IsTokenABinaryOp(token)) return false;
+  if (!IsBinaryOpRightAssociative(token)) return false;
+  return GetBinaryOpPrecedence(token) == precedence;
+}
+
+unique_ptr<Expr> Parser::parseBinaryOpExprRHS(unique_ptr<Expr> lhs,
+                                              int min_precedence) {
+  // Keep parsing until we hit a binary op with lower precedence,
+  // or the end of the expression.
+  while (IsTokenABinaryOpWithPrecedenceAtLeast(lex_.GetCurToken(),
+                                               min_precedence)) {
+
+    assert(IsTokenABinaryOp(lex_.GetCurToken()) && "Expected binary operator");
+    Token binary_op = lex_.ConsumeCurToken();
+
+    auto rhs = parsePrimaryExpr();
+    if (!rhs) {
+      diagnose(diag::expected_primary_expression_after_binary_op);
+      return nullptr;
+    }
+
+    // Recurse for binary operators with higher precedence.
+    int op_precedence = GetBinaryOpPrecedence(binary_op);
+    while (IsTokenABinaryOpWithPrecedenceGreaterThan(lex_.GetCurToken(),
+                                                     op_precedence)
+           || IsTokenRightAssociativeWithPrecedence(lex_.GetCurToken(),
+                                                    op_precedence)) {
+      Token lookahead_op = lex_.GetCurToken();
+      rhs = parseBinaryOpExprRHS(move(rhs),
+                                 GetBinaryOpPrecedence(lookahead_op));
+      if (!rhs) {
+        // The innermost expression parsing method should show a diagnostic.
+        return nullptr;
+      }
+    }
+
+    assert(lhs && rhs);
+    lhs = make_unique<BinaryOpExpr>(binary_op, move(lhs), move(rhs));
+  }
+  return lhs;
 }
 
 unique_ptr<Expr> Parser::parsePrimaryExpr() {
@@ -30,7 +140,7 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
     return parseParenExpr();
   }
 
-  if (lex_.GetCurToken().GetKind() == Token::minus) {
+  if (IsPrefixUnaryOpToken(lex_.GetCurToken())) {
     return parseUnaryOpExpr();
   }
 
@@ -84,7 +194,7 @@ unique_ptr<UnaryOpExpr> Parser::parseUnaryOpExpr() {
   */
 
   // Expect a unary operator
-  if (lex_.GetCurToken().GetKind() != Token::minus) {
+  if (!IsPrefixUnaryOpToken(lex_.GetCurToken())) {
     llvm_unreachable("Expected a unary operator");
   }
   Token unary_op = lex_.ConsumeCurToken();

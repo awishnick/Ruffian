@@ -65,6 +65,8 @@ private:
   // Stmt
   ////////////////////////////////////////
   std::unique_ptr<Expr> parseExpr();
+  std::unique_ptr<Expr> parseBinaryOpExprRHS(std::unique_ptr<Expr> lhs,
+                                             int min_precedence);
   std::unique_ptr<Expr> parsePrimaryExpr();
   std::unique_ptr<IdentifierExpr> parseIdentifierExpr();
   std::unique_ptr<NumericLiteral> parseNumericLiteral();

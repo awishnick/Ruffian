@@ -42,7 +42,7 @@ static int LexAndDump(istream& input, ostream& stream) {
         break;
       case Token::int_literal:
         stream << "INT_LITERAL("
-               << tok.GetIntLiteral().toString(10, /*signed*/true)
+               << tok.GetIntLiteral().toString(10, /*signed*/false)
                << ")";
         break;
       case Token::lparen:
@@ -77,6 +77,12 @@ static int LexAndDump(istream& input, ostream& stream) {
         break;
       case Token::plus:
         stream << "+";
+        break;
+      case Token::star:
+        stream << "*";
+        break;
+      case Token::slash:
+        stream << "/";
         break;
       case Token::arrow:
         stream << "->";

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <iostream>
 using namespace std;
 
 static bool is_char_ident_or_kw(char c) {
@@ -136,12 +137,9 @@ static Token GetNextToken(stringstream& input,
       } else {
         return Token::Create(Token::minus);
       }
+    case '*': return Token::Create(Token::star);
+    case '/': return Token::Create(Token::slash);
     default: break;
-  }
-
-  if (input.peek() == '-') {
-    (void)input.get();
-    return Token::Create(Token::minus);
   }
 
   // If we get here, it's an unknown token.

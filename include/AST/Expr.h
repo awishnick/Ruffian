@@ -43,3 +43,20 @@ private:
   std::unique_ptr<Expr> expr_;
 };
 
+class BinaryOpExpr : public Expr {
+public:
+  BinaryOpExpr(Token op, std::unique_ptr<Expr> left,
+               std::unique_ptr<Expr> right);
+  virtual ~BinaryOpExpr();
+
+  const Token& GetOp() const { return op_; }
+
+  const Expr* GetLeft() const { return left_.get(); }
+  Expr* GetLeft() { return left_.get(); }
+
+  const Expr* GetRight() const { return right_.get(); }
+  Expr* GetRight() { return right_.get(); }
+private:
+  Token op_;
+  std::unique_ptr<Expr> left_, right_;
+};

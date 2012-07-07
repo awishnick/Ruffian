@@ -3,12 +3,14 @@
 #include "AST/Expr.h"
 #include "AST/Module.h"
 #include "AST/Stmt.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 using namespace std;
 using llvm::StringRef;
+using llvm::SmallString;
 
 template <class Derived>
 class ASTVisitor {
@@ -132,6 +134,8 @@ public:
       return derived().VisitNumericLiteral(child);
     } else if (auto child = dynamic_cast<UnaryOpExpr*>(expr)) {
       return derived().VisitUnaryOpExpr(child);
+    } else if (auto child = dynamic_cast<BinaryOpExpr*>(expr)) {
+      return derived().VisitBinaryOpExpr(child);
     } else {
       llvm_unreachable("Unimplemented subclass");
     }
@@ -181,6 +185,21 @@ public:
   bool WalkUpFromUnaryOpExpr(UnaryOpExpr* expr) {
     if (!derived().WalkUpFromExpr(expr)) return false;
     return derived().VisitUnaryOpExpr(expr);
+  }
+
+  // BinaryOpExpr
+  bool TraverseBinaryOpExpr(BinaryOpExpr* expr) {
+    if (!derived().WalkUpFromBinaryOpExpr(expr)) return false;
+    derived().TraverseExpr(expr->GetLeft());
+    derived().TraverseExpr(expr->GetRight());
+    return true;
+  }
+  bool VisitBinaryOpExpr(BinaryOpExpr*) {
+    return true;
+  }
+  bool WalkUpFromBinaryOpExpr(BinaryOpExpr* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+    return derived().VisitBinaryOpExpr(expr);
   }
 private:
   Derived& derived() { return static_cast<Derived&>(*this); }
@@ -310,7 +329,7 @@ namespace {
 
       llvm::APInt value = expr->GetValue().GetIntLiteral();
       output_ << node_name
-              << "[label=\"" << value.toString(10, /*signed*/true)
+              << "[label=\"" << value.toString(10, /*signed*/false)
               << "\"];\n";
       add_child(node_name);
 
@@ -322,13 +341,13 @@ namespace {
       node_name_stm << "UnaryOpExpr" << make_unique_index();
       string node_name = make_node_name(node_name_stm.str());
 
-      string op;
+      SmallString<8> op;
       switch (expr->GetOp().GetKind()) {
         case Token::minus: op = "-"; break;
         default: llvm_unreachable("Unexpected unary op");
       };
       output_ << node_name
-              << "[label=\"" << op << "\"];\n";
+              << "[label=\"" << op.c_str() << "\"];\n";
       add_child(node_name);
 
       // Visit the child expression.
@@ -336,6 +355,43 @@ namespace {
       TraverseExpr(expr->GetExpr());
 
       // We've already visited the child expression.
+      return false;
+    }
+
+    bool VisitBinaryOpExpr(BinaryOpExpr* expr) {
+      stringstream node_name_stm;
+      node_name_stm << "BinaryOpExpr" << make_unique_index();
+      string node_name = make_node_name(node_name_stm.str());
+
+      SmallString<8> op;
+      switch (expr->GetOp().GetKind()) {
+        case Token::assign: op = "="; break;
+        case Token::plus: op = "+"; break;
+        case Token::minus: op = "-"; break;
+        case Token::star: op = "*"; break;
+        case Token::slash: op = "/"; break;
+        default: llvm_unreachable("Unexpected binary op");
+      };
+
+      output_ << node_name.data()
+              << " [shape=record,label=\""
+              << "{BinaryOpExpr|{"
+              << "<left> Left"
+              << "|" << op.c_str()
+              << "|<right> Right}"
+              << "}\"];\n";
+      add_child(node_name);
+
+      // Output left and right.
+      {
+        parent_raii parent(this, node_name+":left");
+        TraverseExpr(expr->GetLeft());
+      }
+      {
+        parent_raii parent(this, node_name+":right");
+        TraverseExpr(expr->GetRight());
+      }
+
       return false;
     }
   private:

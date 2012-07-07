@@ -27,3 +27,12 @@ UnaryOpExpr::UnaryOpExpr(Token op, unique_ptr<Expr> expr)
 
 UnaryOpExpr::~UnaryOpExpr() {}
 
+BinaryOpExpr::BinaryOpExpr(Token op, unique_ptr<Expr> left,
+                           unique_ptr<Expr> right)
+  : op_(op)
+  , left_(move(left))
+  , right_(move(right))
+{
+}
+
+BinaryOpExpr::~BinaryOpExpr() {}
