@@ -2,6 +2,9 @@
 -I../gtest-1.6.0/include
 -std=c++0x
 -stdlib=libc++
+-Wall
+-Wextra
+-pedantic
 -U__STRICT_ANSI__
 -D__STDC_CONSTANT_MACROS
 -D__STDC_FORMAT_MACROS
