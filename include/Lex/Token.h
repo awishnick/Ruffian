@@ -27,6 +27,8 @@ public:
 
     minus,
     plus,
+    star,
+    slash,
     arrow,
 
     eof,

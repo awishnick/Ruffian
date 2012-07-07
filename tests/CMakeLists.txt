@@ -30,3 +30,5 @@ add_test(parse_variable_initializer
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/variable_initializer.rf)
 add_test(parse_function_with_local_vars
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/function_with_local_vars.rf)
+add_test(parse_unary_op
+  ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/unary_op.rf)

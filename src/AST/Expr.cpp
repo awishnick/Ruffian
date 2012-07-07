@@ -1,4 +1,7 @@
 #include "AST/Expr.h"
+#include <memory>
+#include <utility>
+using namespace std;
 
 Expr::~Expr() {}
 
@@ -15,3 +18,12 @@ NumericLiteral::NumericLiteral(Token value)
 }
 
 NumericLiteral::~NumericLiteral() {}
+
+UnaryOpExpr::UnaryOpExpr(Token op, unique_ptr<Expr> expr)
+  : op_(op)
+  , expr_(move(expr))
+{
+}
+
+UnaryOpExpr::~UnaryOpExpr() {}
+

@@ -54,7 +54,7 @@ public:
     if (!derived().WalkUpFromBlockStmt(stmt)) return false;
 
     for (auto& child : stmt->stmts_range()) {
-      derived().VisitStmt(child.get());
+      derived().TraverseStmt(child.get());
     }
 
     return true;
@@ -89,6 +89,11 @@ public:
   // VariableDecl
   bool TraverseVariableDecl(VariableDecl* decl) {
     if (!derived().WalkUpFromVariableDecl(decl)) return false;
+    
+    if (decl->GetInitializer()) {
+      derived().TraverseExpr(decl->GetInitializer());
+    }
+
     return true;
   }
   bool VisitVariableDecl(VariableDecl*) {
@@ -104,7 +109,7 @@ public:
     if (!derived().WalkUpFromFunctionDecl(decl)) return false;
 
     for (auto& arg : decl->args_range()) {
-      derived().VisitVariableDecl(arg.get());
+      derived().TraverseVariableDecl(arg.get());
     }
 
     return true;
@@ -125,6 +130,8 @@ public:
       return derived().VisitIdentifierExpr(child);
     } else if (auto child = dynamic_cast<NumericLiteral*>(expr)) {
       return derived().VisitNumericLiteral(child);
+    } else if (auto child = dynamic_cast<UnaryOpExpr*>(expr)) {
+      return derived().VisitUnaryOpExpr(child);
     } else {
       llvm_unreachable("Unimplemented subclass");
     }
@@ -160,6 +167,20 @@ public:
   bool WalkUpFromNumericLiteral(NumericLiteral* expr) {
     if (!derived().WalkUpFromExpr(expr)) return false;
     return derived().VisitNumericLiteral(expr);
+  }
+
+  // UnaryOpExpr
+  bool TraverseUnaryOpExpr(UnaryOpExpr* expr) {
+    if (!derived().WalkUpFromUnaryOpExpr(expr)) return false;
+    derived().TraverseExpr(expr->GetExpr());
+    return true;
+  }
+  bool VisitUnaryOpExpr(UnaryOpExpr*) {
+    return true;
+  }
+  bool WalkUpFromUnaryOpExpr(UnaryOpExpr* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+    return derived().VisitUnaryOpExpr(expr);
   }
 private:
   Derived& derived() { return static_cast<Derived&>(*this); }
@@ -247,7 +268,7 @@ namespace {
         TraverseExpr(init);
       }
 
-      return true;
+      return false;
     }
 
     bool VisitBlockStmt(BlockStmt* stmt) {
@@ -265,7 +286,7 @@ namespace {
         TraverseStmt(child.get());
       }
 
-      return true;
+      return false;
     }
 
     bool VisitIdentifierExpr(IdentifierExpr* expr) {
@@ -279,7 +300,7 @@ namespace {
               << "\"];\n";
       add_child(node_name);
       
-      return true;
+      return false;
     }
 
     bool VisitNumericLiteral(NumericLiteral* expr) {
@@ -293,7 +314,29 @@ namespace {
               << "\"];\n";
       add_child(node_name);
 
-      return true;
+      return false;
+    }
+
+    bool VisitUnaryOpExpr(UnaryOpExpr* expr) {
+      stringstream node_name_stm;
+      node_name_stm << "UnaryOpExpr" << make_unique_index();
+      string node_name = make_node_name(node_name_stm.str());
+
+      string op;
+      switch (expr->GetOp().GetKind()) {
+        case Token::minus: op = "-"; break;
+        default: llvm_unreachable("Unexpected unary op");
+      };
+      output_ << node_name
+              << "[label=\"" << op << "\"];\n";
+      add_child(node_name);
+
+      // Visit the child expression.
+      parent_raii parent(this, node_name);
+      TraverseExpr(expr->GetExpr());
+
+      // We've already visited the child expression.
+      return false;
     }
   private:
     ostream& output_;

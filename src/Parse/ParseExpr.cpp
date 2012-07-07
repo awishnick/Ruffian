@@ -15,6 +15,7 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
       : identifier
       | numeric_literal
       | ( expression )
+      | unary_op_expression
   */
 
   if (lex_.GetCurToken().GetKind() == Token::ident) {
@@ -27,6 +28,10 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
 
   if (lex_.GetCurToken().GetKind() == Token::lparen) {
     return parseParenExpr();
+  }
+
+  if (lex_.GetCurToken().GetKind() == Token::minus) {
+    return parseUnaryOpExpr();
   }
 
   diagnose(diag::expected_primary_expression);
@@ -71,4 +76,26 @@ unique_ptr<Expr> Parser::parseParenExpr() {
   }
 
   return expr;
+}
+
+unique_ptr<UnaryOpExpr> Parser::parseUnaryOpExpr() {
+  /* unary_op_expression
+      : - primary_expression
+  */
+
+  // Expect a unary operator
+  if (lex_.GetCurToken().GetKind() != Token::minus) {
+    llvm_unreachable("Expected a unary operator");
+  }
+  Token unary_op = lex_.ConsumeCurToken();
+
+  // Parse the primary expression
+  auto primary_expr = parsePrimaryExpr();
+  if (!primary_expr) {
+    // Don't try to recover.
+    diagnose(diag::expected_primary_expression_after_unary_op);
+    return nullptr;
+  }
+
+  return make_unique<UnaryOpExpr>(unary_op, move(primary_expr));
 }

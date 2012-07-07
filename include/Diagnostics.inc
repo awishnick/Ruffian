@@ -37,4 +37,6 @@ DIAG(expected_semicolon_after_expression,
      "Expected ';' after the expression.")
 DIAG(expected_rparen_after_expression,
      "Expected ')' after the expression.")
+DIAG(expected_primary_expression_after_unary_op,
+     "Expected a primary-expression after the unary operator.")
 #undef DIAG

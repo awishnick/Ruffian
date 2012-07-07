@@ -1,0 +1,4 @@
+func t() {
+  var int a = -349;
+  var int b = -a;
+}

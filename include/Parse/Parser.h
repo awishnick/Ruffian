@@ -9,7 +9,7 @@
 
 class Lexer; class Module; class Decl; class FunctionDecl; class VariableDecl;
 class Stmt; class BlockStmt; class Expr; class NumericLiteral; class ExprStmt;
-class IdentifierExpr;
+class IdentifierExpr; class UnaryOpExpr;
 
 class Parser {
 public:
@@ -69,5 +69,6 @@ private:
   std::unique_ptr<IdentifierExpr> parseIdentifierExpr();
   std::unique_ptr<NumericLiteral> parseNumericLiteral();
   std::unique_ptr<Expr> parseParenExpr();
+  std::unique_ptr<UnaryOpExpr> parseUnaryOpExpr();
 };
 
