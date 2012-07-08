@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Lex/Token.h"
+#include "Support/iterator_range.h"
 
 class Expr {
 public:
@@ -60,3 +61,27 @@ private:
   Token op_;
   std::unique_ptr<Expr> left_, right_;
 };
+
+class FunctionCall : public Expr {
+public:
+  FunctionCall(Token name, std::vector<std::unique_ptr<Expr>> args);
+  virtual ~FunctionCall();
+
+  const Token& GetName() const { return name_; }
+
+  typedef std::vector<std::unique_ptr<Expr>> args_container_type;
+  typedef args_container_type::iterator args_iterator;
+  typedef args_container_type::const_iterator const_args_iterator;
+
+  auto args_range() -> iterator_range<args_iterator> {
+    return make_iterator_range(args_.begin(), args_.end());
+  }
+  auto args_range() const -> iterator_range<const_args_iterator> {
+    return make_iterator_range(args_.begin(), args_.end());
+  }
+
+private:
+  Token name_;
+  std::vector<std::unique_ptr<Expr>> args_;
+};
+

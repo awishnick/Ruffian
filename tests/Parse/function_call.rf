@@ -1,0 +1,7 @@
+func test(a int, b int) -> int {
+}
+
+func test2() {
+  var k int;
+  var a int = test(2*3, k*8 + 42);
+}

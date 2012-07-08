@@ -36,3 +36,11 @@ BinaryOpExpr::BinaryOpExpr(Token op, unique_ptr<Expr> left,
 }
 
 BinaryOpExpr::~BinaryOpExpr() {}
+
+FunctionCall::FunctionCall(Token name, vector<unique_ptr<Expr>> args)
+  : name_(name)
+  , args_(move(args))
+{
+}
+
+FunctionCall::~FunctionCall() {}

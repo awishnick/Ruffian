@@ -36,3 +36,5 @@ add_test(parse_unary_op
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/unary_op.rf)
 add_test(parse_binary_op
   ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/binary_op.rf)
+add_test(parse_function_call
+  ${DRIVER_PATH} -dump-ast ${TESTS_PATH}/Parse/function_call.rf)

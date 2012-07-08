@@ -9,7 +9,7 @@
 
 class Lexer; class Module; class Decl; class FunctionDecl; class VariableDecl;
 class Stmt; class BlockStmt; class Expr; class NumericLiteral; class ExprStmt;
-class IdentifierExpr; class UnaryOpExpr;
+class IdentifierExpr; class UnaryOpExpr; class FunctionCall;
 
 class Parser {
 public:
@@ -42,15 +42,15 @@ private:
   std::unique_ptr<Decl> parseDecl();
   std::unique_ptr<FunctionDecl> parseFunctionDecl();
   
-  // Parses a function argument list, placing it into args.
+  // Parses a function declaration argument list, placing it into args.
   // On error, returns false.
-  typedef std::pair<Token, Token> function_arg_pair;
-  typedef std::vector<function_arg_pair> function_arg_list;
-  bool parseFunctionArgList(function_arg_list* args);
+  typedef std::pair<Token, Token> function_decl_arg_pair;
+  typedef std::vector<function_decl_arg_pair> function_decl_arg_list;
+  bool parseFunctionDeclArgList(function_decl_arg_list* args);
   
   // Parses a function argument pair, placing it into arg.
   // If none is found (not necessarily an error), returns false.
-  bool parseFunctionArgPair(function_arg_pair* arg);
+  bool parseFunctionArgPair(function_decl_arg_pair* arg);
 
   std::unique_ptr<VariableDecl> parseVariableDecl();
 
@@ -62,15 +62,19 @@ private:
   std::unique_ptr<ExprStmt> parseExprStmt();
   
   ////////////////////////////////////////
-  // Stmt
+  // Expr
   ////////////////////////////////////////
   std::unique_ptr<Expr> parseExpr();
   std::unique_ptr<Expr> parseBinaryOpExprRHS(std::unique_ptr<Expr> lhs,
                                              int min_precedence);
   std::unique_ptr<Expr> parsePrimaryExpr();
-  std::unique_ptr<IdentifierExpr> parseIdentifierExpr();
+  std::unique_ptr<Expr> parseIdentifierExpr();
   std::unique_ptr<NumericLiteral> parseNumericLiteral();
   std::unique_ptr<Expr> parseParenExpr();
   std::unique_ptr<UnaryOpExpr> parseUnaryOpExpr();
+  // Parses the function call arguments list, placing it into args.
+  // On error, returns false.
+  typedef std::vector<std::unique_ptr<Expr>> function_call_args_list;
+  bool parseFunctionCallArgsList( function_call_args_list* args );
 };
 

@@ -29,9 +29,9 @@ unique_ptr<Decl> Parser::parseDecl() {
 
 unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   /* function_decl
-      : func identifier ( function_arg_list ) -> identifier { stmt }
+      : func identifier ( function_decl_arg_list ) -> identifier { stmt }
       | func identifier ( ) -> identifier { stmt }
-      | func identifier ( function_arg_list ) { stmt }
+      | func identifier ( function_decl_arg_list ) { stmt }
       | func identifier ( ) { stmt }
    */
 
@@ -55,9 +55,9 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   }
 
   // Parse the argument list if the next token is not an rparen.
-  function_arg_list args;
+  function_decl_arg_list args;
   if (lex_.GetCurToken().GetKind() != Token::rparen
-      && !parseFunctionArgList(&args)) {
+      && !parseFunctionDeclArgList(&args)) {
     diagnose(diag::could_not_parse_function_argument_declaration);
     // Recover by pretending there are no arguments, and finding the
     // matching rparen.
@@ -83,7 +83,7 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   arg_decls.reserve(args.size());
   transform(args.begin(), args.end(),
             back_inserter(arg_decls),
-            [](const function_arg_pair& arg_pair) {
+            [](const function_decl_arg_pair& arg_pair) {
               return make_unique<VariableDecl>(arg_pair.first,
                                                arg_pair.second);
             });
@@ -131,16 +131,16 @@ unique_ptr<FunctionDecl> Parser::parseFunctionDecl() {
   
 }
 
-bool Parser::parseFunctionArgList(function_arg_list* args) {
-  /* function_arg_list
-      : function_arg_pair , function_arg_list
-     function_arg_pair
+bool Parser::parseFunctionDeclArgList(function_decl_arg_list* args) {
+  /* function_decl_arg_list
+      : function_decl_arg_pair , function_decl_arg_list
+     function_decl_arg_pair
       : identifier identifier
    */
 
-  // Read each function_arg_pair
+  // Read each function_decl_arg_pair
   for (;;) {
-    function_arg_pair arg;
+    function_decl_arg_pair arg;
     if (!parseFunctionArgPair(&arg)) {
       // TODO: error
       // TODO: recovery? Could emit an error but not return failure.
@@ -159,7 +159,7 @@ bool Parser::parseFunctionArgList(function_arg_list* args) {
   return true;
 }
 
-bool Parser::parseFunctionArgPair(function_arg_pair* arg) {
+bool Parser::parseFunctionArgPair(function_decl_arg_pair* arg) {
   Token type;
   if (!expectAndConsumeIdentifier(&type)) {
     diagnose(diag::expected_type_ident_in_func_arg_list);

@@ -122,7 +122,7 @@ unique_ptr<Expr> Parser::parseBinaryOpExprRHS(unique_ptr<Expr> lhs,
 
 unique_ptr<Expr> Parser::parsePrimaryExpr() {
   /* primary_expression
-      : identifier
+      : identifier_expression
       | numeric_literal
       | ( expression )
       | unary_op_expression
@@ -149,13 +149,31 @@ unique_ptr<Expr> Parser::parsePrimaryExpr() {
 
 }
 
-unique_ptr<IdentifierExpr> Parser::parseIdentifierExpr() {
+unique_ptr<Expr> Parser::parseIdentifierExpr() {
+  /* identifier_expression
+      : identifier
+      | identifier function_call_args_list
+  */
   Token ident_tok;
   if (!expectAndConsumeIdentifier(&ident_tok)) {
     llvm_unreachable("Expected an identifier token");
   }
 
-  return make_unique<IdentifierExpr>(ident_tok);
+  // If there is no opening paren, then this is just a regular identifer
+  // expression, and not a function call.
+  if (lex_.GetCurToken().GetKind() != Token::lparen) {
+    return make_unique<IdentifierExpr>(ident_tok);
+  }
+
+  // If we're here, there is an opening paren, and this is a function call.
+  assert(lex_.GetCurToken().GetKind() == Token::lparen);
+  function_call_args_list args;
+  if (!parseFunctionCallArgsList(&args)) {
+    diagnose(diag::error_parsing_function_call_args);
+    return nullptr;
+  }
+
+  return make_unique<FunctionCall>(ident_tok, move(args));
 }
 
 unique_ptr<NumericLiteral> Parser::parseNumericLiteral() {
@@ -208,4 +226,55 @@ unique_ptr<UnaryOpExpr> Parser::parseUnaryOpExpr() {
   }
 
   return make_unique<UnaryOpExpr>(unary_op, move(primary_expr));
+}
+
+bool Parser::parseFunctionCallArgsList(function_call_args_list* args) {
+
+  /*
+      : ( )
+      | ( function_call_args_list_inside )
+     function_call_args_list_inside
+      : expression
+      | expression, function_call_args_list_inside
+  */
+
+  if (lex_.ConsumeCurToken().GetKind() != Token::lparen) {
+    llvm_unreachable("This function should only be called with '('");
+  }
+
+  args->clear();
+
+  // This loop returns on success. Errors are handled at the bottom.
+  for (;;) {
+    auto arg = parseExpr();
+    if (!arg) {
+      diagnose(diag::expected_expression_for_function_call_arg);
+      // Recover by ignoring tokens until the rparen.
+      ignoreTokensUntil(Token::rparen);
+      break;
+    }
+
+    args->push_back(move(arg));
+
+    // Now the next token can either be a comma or rparen. A comma
+    // means another argument is coming, while an rparen means we're done.
+    if (lex_.GetCurToken().GetKind() == Token::rparen) {
+      lex_.ConsumeCurToken();
+      return true;
+    }
+    if (lex_.GetCurToken().GetKind() != Token::comma) {
+      diagnose(diag::expected_comma_or_rparen_after_function_arg);
+      // Recover by ignoring up to the rparen.
+      ignoreTokensUntil(Token::rparen);
+      break;
+    }
+
+    // We got a comma, so eat it.
+    assert(lex_.GetCurToken().GetKind() == Token::comma);
+    lex_.ConsumeCurToken();
+  }
+
+  // We got an error.
+  args->clear();
+  return false;
 }

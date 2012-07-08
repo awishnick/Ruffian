@@ -41,4 +41,11 @@ DIAG(expected_primary_expression_after_unary_op,
      "Expected a primary expression after the unary operator.")
 DIAG(expected_primary_expression_after_binary_op,
      "Expected a primary expression after the binary operator.")
+DIAG(error_parsing_function_call_args,
+     "Encountered an error parsing the function arguments.")
+DIAG(expected_expression_for_function_call_arg,
+     "Expected an expression as an argument to the function.")
+DIAG(expected_comma_or_rparen_after_function_arg,
+     "Expected either ',' or ')' after the argument to the function.")
+    
 #undef DIAG

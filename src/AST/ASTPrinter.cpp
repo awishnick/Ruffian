@@ -136,6 +136,8 @@ public:
       return derived().VisitUnaryOpExpr(child);
     } else if (auto child = dynamic_cast<BinaryOpExpr*>(expr)) {
       return derived().VisitBinaryOpExpr(child);
+    } else if (auto child = dynamic_cast<FunctionCall*>(expr)) {
+      return derived().VisitFunctionCall(child);
     } else {
       llvm_unreachable("Unimplemented subclass");
     }
@@ -200,6 +202,24 @@ public:
   bool WalkUpFromBinaryOpExpr(BinaryOpExpr* expr) {
     if (!derived().WalkUpFromExpr(expr)) return false;
     return derived().VisitBinaryOpExpr(expr);
+  }
+
+  // FunctionCall
+  bool TraverseFunctionCall(FunctionCall* expr) {
+    if (!derived().WalkUpFromFunctionCall(expr)) return false;
+
+    for (auto& arg : expr->args_range()) {
+      TraverseExpr(arg.get());
+    }
+
+    return true;
+  }
+  bool VisitFunctionCall(FunctionCall*) {
+    return true;
+  }
+  bool WalkUpFromFunctionCall(FunctionCall* expr) {
+    if (!derived().WalkUpFromExpr(expr)) return false;
+    return derived().VisitFunctionCall(expr);
   }
 private:
   Derived& derived() { return static_cast<Derived&>(*this); }
@@ -392,6 +412,35 @@ namespace {
         TraverseExpr(expr->GetRight());
       }
 
+      return false;
+    }
+
+    bool VisitFunctionCall(FunctionCall* expr) {
+      string sub_node_name = string("FunctionCall_")
+                             + expr->GetName().GetIdentifier().data();
+      string node_name = make_node_name(sub_node_name);
+
+      output_ << node_name << " [shape=record,label=\""
+              << "{FunctionCall|{<name> "
+              << expr->GetName().GetIdentifier().data();
+
+      if (!expr->args_range().empty()) {
+        output_ << "|<args> Args";
+      }
+
+      output_ << "}}\"];\n";
+      add_child(node_name);
+
+      // Output arguments.
+      {
+        parent_raii parent(this, node_name+":args");
+        for (auto& arg : expr->args_range()) {
+          TraverseExpr(arg.get());
+        }
+      }
+
+      // Don't visit any more children, since we've already visited
+      // the ones that we want to print.
       return false;
     }
   private:
