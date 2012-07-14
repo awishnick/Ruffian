@@ -2,9 +2,10 @@
 #include "llvm/ADT/StringRef.h"
 #include <type_traits>
 
-Token Token::Create(Kind kind) {
+Token Token::Create(Kind kind, SourceLocation loc) {
   Token tok;
   tok.SetKind(kind);
+  tok.SetLocation(loc);
   return tok;
 }
 
@@ -14,6 +15,14 @@ Token::Kind Token::GetKind() const {
 
 void Token::SetKind(Kind kind) {
   kind_ = kind;
+}
+
+SourceLocation Token::GetLocation() const {
+  return loc_;
+}
+
+void Token::SetLocation(SourceLocation loc) {
+  loc_ = loc;
 }
 
 llvm::StringRef Token::GetIdentifier() const {

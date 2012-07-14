@@ -3,6 +3,7 @@
 #include "AST/Module.h"
 #include "Lex/Lexer.h"
 #include "Parse/Parser.h"
+#include "SourceManager.h"
 #include "llvm/Support/CommandLine.h"
 #include <fstream>
 #include <streambuf>
@@ -21,8 +22,10 @@ cl::opt<bool> dump_ast("dump-ast",
 // Throws ios_base::failure if there's an error reading the file
 static int LexAndDump(istream& input, ostream& stream) {
   input >> noskipws;
-  Lexer lex((string(istreambuf_iterator<char>(input),
-                    istreambuf_iterator<char>())));
+  SourceManager sm;
+  sm.SetMainFileFromString(string(istreambuf_iterator<char>(input),
+                                  istreambuf_iterator<char>()));
+  Lexer lex(sm);
 
   while (lex.GetCurToken().GetKind() != Token::eof) {
     auto tok = lex.ConsumeCurToken();
@@ -123,19 +126,14 @@ int RunOnlyLex() {
 
 int RunDumpAST() {
   try {
-    istream* input;
-    ifstream file;
+    SourceManager sm;
     if (!input_filename.empty()) {
-      file.exceptions(ios_base::badbit | ios_base::failbit);
-      file.open(input_filename);
-      input = &file;
+      sm.SetMainFileFromFile(input_filename);
     } else {
-      input = &cin;
+      sm.SetMainFileFromStream(cin);
     }
 
-    *input >> noskipws;
-    Lexer lex((string(istreambuf_iterator<char>(*input),
-                      istreambuf_iterator<char>())));
+    Lexer lex(sm);
 
     Parser parse(lex);
     auto module = parse.ParseModule();

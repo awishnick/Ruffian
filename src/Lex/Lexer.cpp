@@ -3,11 +3,12 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include <iterator>
+#include <istream>
 #include <locale>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <iostream>
+#include "SourceManager.h"
 using namespace std;
 
 static bool is_char_ident_or_kw(char c) {
@@ -16,13 +17,16 @@ static bool is_char_ident_or_kw(char c) {
   return false;
 }
 
-static Token GetIdentifierOrKeyword(stringstream& input,
+static Token GetIdentifierOrKeyword(SourceManager& sm,
                                     vector<unique_ptr<string>>& string_pool) {
+
+  auto& input = sm.GetStream();
 
   // First read this character that we just peeked, since we
   // know it's ident or kw
   assert(isalpha(input.peek()));
   auto ident_or_kw = make_unique<string>();
+  auto source_loc = sm.GetSourceLocationInStream();
   ident_or_kw->push_back(input.get());
 
   // Now read until we hit a character that's not ident or kw
@@ -31,12 +35,16 @@ static Token GetIdentifierOrKeyword(stringstream& input,
   }
 
   // Check for keywords.
-  if (!ident_or_kw->compare("func")) return Token::Create(Token::kw_func);
-  if (!ident_or_kw->compare("var")) return Token::Create(Token::kw_var);
-  if (!ident_or_kw->compare("return")) return Token::Create(Token::kw_return);
+  if (!ident_or_kw->compare("func")) return Token::Create(Token::kw_func,
+                                                          source_loc);
+  if (!ident_or_kw->compare("var")) return Token::Create(Token::kw_var,
+                                                         source_loc);
+  if (!ident_or_kw->compare("return")) return Token::Create(Token::kw_return,
+                                                            source_loc);
 
   // If we got here, it's not a keyword, so it must be an identifier
   Token tok;
+  tok.SetLocation(source_loc);
   tok.SetIdentifier(*ident_or_kw);
   string_pool.push_back(move(ident_or_kw));
   return tok;
@@ -46,10 +54,12 @@ static bool is_char_numeric_literal(char c) {
   return isdigit(c);
 }
 
-static Token GetNumericLiteral(stringstream& input) {
+static Token GetNumericLiteral(SourceManager& sm) {
 
   // First read this character that we just peeked, since we know
   // it's a numeric literal.
+  auto& input = sm.GetStream();
+  auto source_loc = sm.GetSourceLocationInStream();
   assert(is_char_numeric_literal(input.peek()));
   llvm::SmallString<16> str;
   str.push_back(input.get());
@@ -65,12 +75,13 @@ static Token GetNumericLiteral(stringstream& input) {
   llvm::APInt int_literal(/*numBits=*/4*str.size(),
                           str, /*radix=*/10);
   Token tok;
+  tok.SetLocation(source_loc);
   tok.SetIntLiteral(int_literal);
   return tok;
 }
 
 // Skips comments, returning true if any were found
-static bool SkipComments(stringstream& input) {
+static bool SkipComments(istream& input) {
   // Skip single-line comments.
   if (input.peek() == '/') {
     (void)input.get();
@@ -88,72 +99,74 @@ static bool SkipComments(stringstream& input) {
 }
 
 // Skips whitespace, returning true if any was found.
-static bool SkipWhitespace(stringstream& input) {
+static bool SkipWhitespace(istream& input) {
   if (!isspace(input.peek())) return false;
   input >> ws;
   return true;
 }
 
 // Ignores input that will not be tokenized, like whitespace and comments.
-static void SkipToNextToken(stringstream& input) {
+static void SkipToNextToken(istream& input) {
   for (;;) {
     if (!SkipWhitespace(input) && !SkipComments(input)) break;
   }
 }
 
-static Token GetNextToken(stringstream& input,
+static Token GetNextToken(SourceManager& sm,
                           vector<unique_ptr<string>>& string_pool) {
+  auto& input = sm.GetStream();
+
   SkipToNextToken(input);
 
   // Check for EOF
-  if (input.eof()) return Token::Create(Token::eof);
+  if (input.eof()) return Token::Create(Token::eof,
+                                        sm.GetSourceLocationInStream());
 
   // Check for a keyword or identifier. They both start
   // with an alphabetic character.
   if (isalpha(input.peek())) {
-    return GetIdentifierOrKeyword(input, string_pool);
+    return GetIdentifierOrKeyword(sm, string_pool);
   }
 
   // Check for an numeric literal. They start with a numeric character.
   if (isdigit(input.peek())) {
-    return GetNumericLiteral(input);
+    return GetNumericLiteral(sm);
   }
 
+  auto source_loc = sm.GetSourceLocationInStream();
   switch (input.get()) {
-    case '(': return Token::Create(Token::lparen);
-    case ')': return Token::Create(Token::rparen);
-    case '{': return Token::Create(Token::lbrace);
-    case '}': return Token::Create(Token::rbrace);
-    case '[': return Token::Create(Token::lbracket);
-    case ']': return Token::Create(Token::rbracket);
-    case ';': return Token::Create(Token::semicolon);
-    case ',': return Token::Create(Token::comma);
-    case '=': return Token::Create(Token::assign);
-    case '+': return Token::Create(Token::plus);
+    case '(': return Token::Create(Token::lparen, source_loc);
+    case ')': return Token::Create(Token::rparen, source_loc);
+    case '{': return Token::Create(Token::lbrace, source_loc);
+    case '}': return Token::Create(Token::rbrace, source_loc);
+    case '[': return Token::Create(Token::lbracket, source_loc);
+    case ']': return Token::Create(Token::rbracket, source_loc);
+    case ';': return Token::Create(Token::semicolon, source_loc);
+    case ',': return Token::Create(Token::comma, source_loc);
+    case '=': return Token::Create(Token::assign, source_loc);
+    case '+': return Token::Create(Token::plus, source_loc);
     case '-':
       if (input.peek() == '>') {
         (void)input.get();
-        return Token::Create(Token::arrow);
+        return Token::Create(Token::arrow, source_loc);
       } else {
-        return Token::Create(Token::minus);
+        return Token::Create(Token::minus, source_loc);
       }
-    case '*': return Token::Create(Token::star);
-    case '/': return Token::Create(Token::slash);
+    case '*': return Token::Create(Token::star, source_loc);
+    case '/': return Token::Create(Token::slash, source_loc);
     default: break;
   }
 
   // If we get here, it's an unknown token.
-  Token tok;
-  tok.SetKind(Token::unknown);
-  return tok;
+  return Token::Create(Token::unknown, source_loc);
 }
 
-Lexer::Lexer(const string& inputbuf)
-  : input_(inputbuf)
+Lexer::Lexer(SourceManager& sm)
+  : sm_(sm)
 {
-  input_ >> noskipws;
+  sm_.GetStream() >> noskipws;
 
-  curtok_ = GetNextToken(input_, string_pool_);
+  curtok_ = GetNextToken(sm_, string_pool_);
 }
 
 Token Lexer::GetCurToken() const {
@@ -162,7 +175,7 @@ Token Lexer::GetCurToken() const {
 
 Token Lexer::ConsumeCurToken() {
   const auto curtok = curtok_;
-  curtok_ = GetNextToken(input_, string_pool_);
+  curtok_ = GetNextToken(sm_, string_pool_);
   return curtok;
 }
 

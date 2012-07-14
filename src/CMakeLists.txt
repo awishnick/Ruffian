@@ -11,6 +11,7 @@ add_library(ruffian STATIC
   Parse/ParseExpr.cpp
   Parse/ParseModule.cpp
   Parse/ParseStmt.cpp
+  SourceManager.cpp
 )
 
 add_executable(driver

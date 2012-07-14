@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/StringRef.h"
+#include "SourceLocation.h"
 
 class Token {
 public:
@@ -35,10 +36,13 @@ public:
     unknown
   };
 
-  static Token Create(Kind kind);
+  static Token Create(Kind kind, SourceLocation loc);
 
   Kind GetKind() const;
   void SetKind(Kind kind);
+
+  SourceLocation GetLocation() const;
+  void SetLocation(SourceLocation loc);
 
   // If this token is an identifier, returns it as a string.
   // Do not call this if this isn't an identifier.
@@ -53,6 +57,7 @@ public:
   void SetIntLiteral(llvm::APInt int_literal);
 private:
   Kind kind_;
+  SourceLocation loc_;
   struct {
     llvm::StringRef ident;
     llvm::APInt int_literal;

@@ -1,5 +1,6 @@
 #include "Lex/Lexer.h"
 #include "Lex/Token.h"
+#include "SourceManager.h"
 #include "llvm/ADT/StringRef.h"
 #include <string>
 #include <utility>
@@ -13,14 +14,18 @@ TEST(Lex, SingleKeywordTokens) {
   };
 
   for (auto expected : expected_pairs) {
-    Lexer lex(expected.first);
+    SourceManager sm;
+    sm.SetMainFileFromString(expected.first);
+    Lexer lex(sm);
     EXPECT_EQ(expected.second, lex.ConsumeCurToken().GetKind())
       << "Keyword is \"" << expected.first << "\"";
   }
 }
 
 TEST(Lex, KeywordsSeparatedByWhitespace) {
-  Lexer lex("\tfunc var\nvar  func");
+  SourceManager sm;
+  sm.SetMainFileFromString("\tfunc var\nvar  func");
+  Lexer lex(sm);
   EXPECT_EQ(Token::kw_func, lex.ConsumeCurToken().GetKind());
   EXPECT_EQ(Token::kw_var, lex.ConsumeCurToken().GetKind());
   EXPECT_EQ(Token::kw_var, lex.ConsumeCurToken().GetKind());
@@ -28,14 +33,18 @@ TEST(Lex, KeywordsSeparatedByWhitespace) {
 }
 
 TEST(Lex, ConcatenatedKeywords) {
-  Lexer lex("funcvar");
+  SourceManager sm;
+  sm.SetMainFileFromString("funcvar");
+  Lexer lex(sm);
   auto tok = lex.ConsumeCurToken();
   EXPECT_EQ(Token::ident, tok.GetKind());
   EXPECT_EQ("funcvar", tok.GetIdentifier());
 }
 
 TEST(Lex, WhitespaceInKeyword) {
-  Lexer lex("fu nc");
+  SourceManager sm;
+  sm.SetMainFileFromString("fu nc");
+  Lexer lex(sm);
   auto tok = lex.ConsumeCurToken();
   EXPECT_EQ(Token::ident, tok.GetKind());
   EXPECT_EQ("fu", tok.GetIdentifier());

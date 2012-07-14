@@ -1,5 +1,6 @@
 #include "Lex/Lexer.h"
 #include "Lex/Token.h"
+#include "SourceManager.h"
 #include <sstream>
 #include <string>
 #include <utility>
@@ -16,7 +17,9 @@ TEST(Lex, IntegerLiterals) {
     sstr << ' ';
   }
 
-  Lexer lex(sstr.str());
+  SourceManager sm;
+  sm.SetMainFileFromStream(sstr);
+  Lexer lex(sm);
   for (int n : expected_ints) {
     auto tok = lex.ConsumeCurToken();
 
