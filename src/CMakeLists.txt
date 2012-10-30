@@ -16,6 +16,7 @@ add_library(ruffian STATIC
 
 add_executable(driver
   Driver/main.cpp
+  Driver/Repl.cpp
 )
 
 include_directories(${COMMON_INCLUDES})

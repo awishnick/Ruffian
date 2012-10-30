@@ -17,6 +17,7 @@ public:
   ~Parser();
 
   std::unique_ptr<Module> ParseModule();
+  std::unique_ptr<Decl> ParseDecl();
 private:
   Lexer& lex_;
 

@@ -163,22 +163,34 @@ static Token GetNextToken(SourceManager& sm,
 
 Lexer::Lexer(SourceManager& sm)
   : sm_(sm)
+  , no_tok_(false)
 {
   sm_.GetStream() >> noskipws;
 
   curtok_ = GetNextToken(sm_, string_pool_);
 }
 
-Token Lexer::GetCurToken() const {
+Token Lexer::GetCurToken() {
+  getTokenIfNecessary();
   return curtok_;
 }
 
 Token Lexer::ConsumeCurToken() {
+  getTokenIfNecessary();
+  // Rather than immediately getting the next token, just clear
+  // out the current way, and lazily get it when it's needed. This
+  // makes the REPL work better, since a full declaration can finish
+  // being parsed without having to wait for another token to be input.
   const auto curtok = curtok_;
-  curtok_ = GetNextToken(sm_, string_pool_);
+  no_tok_  = true;
   return curtok;
 }
 
+void Lexer::getTokenIfNecessary() {
+  if (!no_tok_) return;
+  curtok_ = GetNextToken(sm_, string_pool_);
+  no_tok_ = false;
+}
 
 Lexer::~Lexer() {}
 

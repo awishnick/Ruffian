@@ -14,6 +14,10 @@
 using namespace std;
 using llvm::StringRef;
 
+unique_ptr<Decl> Parser::ParseDecl() {
+  return parseDecl();
+}
+
 unique_ptr<Decl> Parser::parseDecl() {
   if (lex_.GetCurToken().GetKind() == Token::kw_func) {
     return parseFunctionDecl();

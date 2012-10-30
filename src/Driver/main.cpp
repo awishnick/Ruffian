@@ -3,6 +3,7 @@
 #include "AST/Module.h"
 #include "Lex/Lexer.h"
 #include "Parse/Parser.h"
+#include "Repl.h"
 #include "SourceManager.h"
 #include "llvm/Support/CommandLine.h"
 #include <fstream>
@@ -118,7 +119,9 @@ int RunOnlyLex() {
     }
     return LexAndDump(*input, cout);
   } catch (const ios_base::failure& e) {
-    cerr << "Error reading from \"" << input_filename << "\"" << endl;
+    cerr << "Error reading from \"" << input_filename << "\": ";
+    cerr << e.what() << endl;
+
     return 1;
   }
   return 0;
@@ -154,7 +157,12 @@ int RunDumpAST() {
                
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv);
-
+    
+  if (input_filename.empty()) {
+    Repl repl;
+    return repl.Run(std::cin, std::cout, std::cerr);
+  }
+  
   if (only_lex) {
     return RunOnlyLex();
   }

@@ -21,4 +21,3 @@ unique_ptr<Module> Parser::ParseModule() {
 
   return module;
 }
-
